@@ -20,10 +20,9 @@ final class Controller: NSObject {
     var matches: [Int] = []     // indexes into hints
     var selected = 0
 
-    // Grid: two-letter cells over every screen, then a 5×5 grid inside the chosen cell
-    var gridCells: [(label: String, rect: CGRect)] = []
-    var gridCell: CGRect?       // the chosen cell, once its label is typed
-    var subCells: [(label: String, rect: CGRect)] = []
+    // Grid: the current region splits into cells named after the keys in the same spot on the
+    // keyboard; picking a cell zooms into it. regions[0] is the whole screen.
+    var regions: [CGRect] = []
 
     // Scroll
     var areas: [ScrollArea] = []
@@ -211,6 +210,7 @@ final class Controller: NSObject {
             view.boxes = []
             view.cells = []
             view.tint = false
+            view.dot = nil
             view.banner = nil
             view.typed = ""
             var focus: NSPoint?   // where the banner belongs: the screen with the thing in focus
@@ -251,24 +251,22 @@ final class Controller: NSObject {
                         + (areas.count > 1 ? "   1–\(areas.count) area" : "") + "   esc done"
                 }
             case .grid:
-                view.tint = true
-                view.typed = gridCell == nil ? typed : ""
-                let cells = gridCell == nil ? gridCells : subCells
-                for c in cells {
+                guard let region = regions.last else { break }
+                for c in gridSplit(region) {
                     let r = cocoa(c.rect)
                     guard window.frame.intersects(r) else { continue }
                     view.cells.append(NSRect(origin: local(r.origin), size: r.size))
-                    view.labels.append(.init(text: c.label, point: local(NSPoint(x: r.midX, y: r.midY)), centered: true))
+                    view.labels.append(.init(text: c.label, point: local(NSPoint(x: r.midX, y: r.midY)), centered: true, faint: true))
                 }
-                if let cell = gridCell {
-                    let r = cocoa(cell)
-                    focus = NSPoint(x: r.midX, y: r.midY)
-                    if window.frame.intersects(r) { view.boxes.append((NSRect(origin: local(r.origin), size: r.size), true)) }
-                    if window.frame.contains(focus!) || NSScreen.screens.count == 1 {
-                        view.banner = "Type a letter to click there   ↩ click the middle   ⌫ back   esc cancel"
-                    }
-                } else if let screen = NSScreen.main, window.frame == screen.frame {
-                    view.banner = "Grid   type a cell's letters   ⌫ back   esc cancel"
+                let r = cocoa(region)
+                let center = NSPoint(x: r.midX, y: r.midY)
+                if window.frame.intersects(r) {
+                    view.boxes.append((NSRect(origin: local(r.origin), size: r.size), true))
+                    view.dot = local(center)
+                }
+                if window.frame.contains(center) {
+                    let screens = NSScreen.screens.count > 1 ? "   1–\(NSScreen.screens.count) screen" : ""
+                    view.banner = "Pick a cell to zoom in   ↩ click the dot   ⌫ back" + screens + "   esc cancel"
                 }
             case .off:
                 break
@@ -289,9 +287,7 @@ final class Controller: NSObject {
         query = ""
         matches = []
         areas = []
-        gridCells = []
-        gridCell = nil
-        subCells = []
+        regions = []
         generation += 1
     }
 
@@ -432,69 +428,58 @@ final class Controller: NSObject {
 
     // MARK: Grid
 
-    /// Covers every screen with cells about 100 points wide, each named by two letters.
+    /// Starts on the screen with the pointer. Number keys switch screens.
     @objc func showGrid() {
         if mode == .off {
             guard AXIsProcessTrusted(), ensureTap() else { welcome.show(); return }
             openOverlay()
         }
-        var rects: [CGRect] = []
-        var size: CGFloat = 100
-        while true {
-            rects = []
-            for screen in NSScreen.screens {
-                // Screen frames are Cocoa (bottom-left); clicks use the top-left space.
-                let f = screen.frame
-                let top = CGRect(x: f.minX, y: primaryHeight - f.maxY, width: f.width, height: f.height)
-                let cols = max(4, Int((f.width / size).rounded())), rows = max(3, Int((f.height / size).rounded()))
-                let w = top.width / CGFloat(cols), h = top.height / CGFloat(rows)
-                for r in 0..<rows {
-                    for c in 0..<cols {
-                        rects.append(CGRect(x: top.minX + CGFloat(c) * w, y: top.minY + CGFloat(r) * h, width: w, height: h))
-                    }
-                }
-            }
-            // Keep every cell to two letters, even with several large screens.
-            if rects.count <= hintAlphabet.count * hintAlphabet.count { break }
-            size *= 1.2
-        }
-        gridCells = zip(labels(count: rects.count), rects).map { (label: $0, rect: $1) }
-        gridCell = nil
-        subCells = []
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.screens.first
+        regions = screen.map { [topLeft($0.frame)] } ?? []
         typed = ""
         mode = .grid
         render()
     }
 
+    /// A Cocoa screen frame (bottom-left origin) in the top-left space that clicks use.
+    func topLeft(_ f: NSRect) -> CGRect { CGRect(x: f.minX, y: primaryHeight - f.maxY, width: f.width, height: f.height) }
+
+    /// Wide regions split 3 across and 2 down on Q W E / A S D. Tall ones split 2 across and
+    /// 3 down on Q W / A S / Z X, so cells stay roughly square and each letter sits where its
+    /// key is on the keyboard.
+    func gridSplit(_ r: CGRect) -> [(label: String, rect: CGRect)] {
+        let rows: [[String]] = r.width >= r.height ? [["Q", "W", "E"], ["A", "S", "D"]] : [["Q", "W"], ["A", "S"], ["Z", "X"]]
+        let h = r.height / CGFloat(rows.count), w = r.width / CGFloat(rows[0].count)
+        return rows.enumerated().flatMap { (y, row) in
+            row.enumerated().map { (x, key) in
+                (label: key, rect: CGRect(x: r.minX + CGFloat(x) * w, y: r.minY + CGFloat(y) * h, width: w, height: h))
+            }
+        }
+    }
+
     func gridKey(code: Int, flags: CGEventFlags, event: CGEvent) {
+        guard let region = regions.last else { return }
         if code == kVK_Delete {
-            if gridCell != nil { gridCell = nil; typed = "" } else if !typed.isEmpty { typed.removeLast() }
+            if regions.count > 1 { regions.removeLast(); render() }
+            return
+        }
+        if code == kVK_Return || code == kVK_Space || code == kVK_ANSI_KeypadEnter {
+            gridClick(CGPoint(x: region.midX, y: region.midY), flags: flags)
+            return
+        }
+        let key = NSEvent(cgEvent: event)?.charactersIgnoringModifiers?.uppercased() ?? ""
+        if let n = Int(key), n >= 1, n <= NSScreen.screens.count {
+            regions = [topLeft(NSScreen.screens[n - 1].frame)]
             render()
             return
         }
-        if let cell = gridCell, code == kVK_Return || code == kVK_Space {
-            gridClick(CGPoint(x: cell.midX, y: cell.midY), flags: flags)
+        guard let cell = gridSplit(region).first(where: { $0.label == key }) else { NSSound.beep(); return }
+        regions.append(cell.rect)
+        // Once a cell is a few points across there's nothing finer to pick: click it.
+        if cell.rect.width < 8 && cell.rect.height < 8 {
+            gridClick(CGPoint(x: cell.rect.midX, y: cell.rect.midY), flags: flags)
             return
-        }
-        guard let chars = NSEvent(cgEvent: event)?.charactersIgnoringModifiers?.uppercased(),
-              let c = chars.first, hintAlphabet.contains(c) else { return }
-        if gridCell != nil {
-            guard let sub = subCells.first(where: { $0.label == String(c) }) else { NSSound.beep(); return }
-            gridClick(CGPoint(x: sub.rect.midX, y: sub.rect.midY), flags: flags)
-            return
-        }
-        let candidate = typed + String(c)
-        let found = gridCells.filter { $0.label.hasPrefix(candidate) }
-        guard !found.isEmpty else { NSSound.beep(); return }
-        typed = candidate
-        if let hit = found.first(where: { $0.label == candidate }) {
-            // Zoom into the cell: 5×5 smaller cells, one letter each.
-            gridCell = hit.rect
-            let w = hit.rect.width / 5, h = hit.rect.height / 5
-            let rects = (0..<25).map { i in
-                CGRect(x: hit.rect.minX + CGFloat(i % 5) * w, y: hit.rect.minY + CGFloat(i / 5) * h, width: w, height: h)
-            }
-            subCells = zip(labels(count: 25), rects).map { (label: $0, rect: $1) }
         }
         render()
     }

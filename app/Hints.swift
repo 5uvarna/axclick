@@ -283,11 +283,13 @@ final class OverlayView: NSView {
         var point: NSPoint      // left edge (or center, if centered) and vertical center
         var selected = false
         var centered = false
+        var faint = false       // grid: big, mostly see-through, so what's underneath shows
     }
     var labels: [Label] = []
     var boxes: [(rect: NSRect, selected: Bool)] = []
     var cells: [NSRect] = []    // grid mode
-    var tint = false            // darkens the screen a little so the grid stands out
+    var tint = false            // darkens the screen a little
+    var dot: NSPoint?           // grid: where Return clicks
     var typed = ""         // dims the typed part of each label and hides labels that don't match
     var banner: String?
 
@@ -317,23 +319,34 @@ final class OverlayView: NSView {
         }
 
         let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .bold)
+        let bigFont = NSFont.monospacedSystemFont(ofSize: 22, weight: .bold)
         for l in labels where l.text.hasPrefix(typed) {
-            let fg: NSColor = l.selected ? .white : .black
-            let text = NSMutableAttributedString(string: l.text, attributes: [.font: font, .foregroundColor: fg])
+            let fg: NSColor = l.selected ? .white : l.faint ? NSColor.black.withAlphaComponent(0.75) : .black
+            let text = NSMutableAttributedString(string: l.text, attributes: [.font: l.faint ? bigFont : font, .foregroundColor: fg])
             if !typed.isEmpty {
                 text.addAttribute(.foregroundColor, value: fg.withAlphaComponent(0.35), range: NSRange(location: 0, length: typed.count))
             }
             let size = text.size()
-            var box = NSRect(x: l.centered ? l.point.x - (size.width + 8) / 2 : l.point.x,
-                             y: l.point.y - (size.height + 4) / 2, width: size.width + 8, height: size.height + 4)
+            let pad: CGFloat = l.faint ? 16 : 8
+            var box = NSRect(x: l.centered ? l.point.x - (size.width + pad) / 2 : l.point.x,
+                             y: l.point.y - (size.height + 4) / 2, width: size.width + pad, height: size.height + 4)
             box.origin.x = min(max(box.minX, bounds.minX), bounds.maxX - box.width)
             box.origin.y = min(max(box.minY, bounds.minY), bounds.maxY - box.height)
             let path = NSBezierPath(roundedRect: box, xRadius: 4, yRadius: 4)
-            (l.selected ? NSColor.systemBlue : NSColor(calibratedRed: 1, green: 0.85, blue: 0.25, alpha: 0.95)).setFill()
+            (l.selected ? NSColor.systemBlue : NSColor(calibratedRed: 1, green: 0.85, blue: 0.25, alpha: l.faint ? 0.35 : 0.95)).setFill()
             path.fill()
-            NSColor.black.withAlphaComponent(0.45).setStroke()
+            NSColor.black.withAlphaComponent(l.faint ? 0.2 : 0.45).setStroke()
             path.stroke()
-            text.draw(at: NSPoint(x: box.minX + 4, y: box.minY + 2))
+            text.draw(at: NSPoint(x: box.minX + pad / 2, y: box.minY + 2))
+        }
+
+        if let d = dot {
+            let ring = NSBezierPath(ovalIn: NSRect(x: d.x - 5, y: d.y - 5, width: 10, height: 10))
+            NSColor.systemRed.withAlphaComponent(0.9).setFill()
+            ring.fill()
+            NSColor.white.setStroke()
+            ring.lineWidth = 1.5
+            ring.stroke()
         }
 
         if let banner = banner {
