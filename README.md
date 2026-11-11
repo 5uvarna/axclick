@@ -64,7 +64,7 @@ It creates a self-signed certificate named "axclick Local Signing" in your login
 
 Click the keyboard icon in the menu bar and choose **Settings…** to:
 
-- **Change the shortcut.** Click the shortcut button and type a new one. It needs ⌘, ⌥ or ⌃.
+- **Change the shortcut.** Click the shortcut button and type a new one: two modifiers with a key (like ⌘⇧Space), or one modifier with Space or a function key. Shortcuts like ⌘W are refused, so you can't accidentally take over an everyday app shortcut.
 - **Launch at login.**
 
 ## Command-line tool

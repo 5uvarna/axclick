@@ -12,5 +12,15 @@ import AppKit
 let controller = Controller()
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
+
+// A menu bar app shows no main menu, but standard shortcuts in our windows still go through it.
+let mainMenu = NSMenu()
+let appMenuItem = mainMenu.addItem(withTitle: "axclick", action: nil, keyEquivalent: "")
+let appMenu = NSMenu()
+appMenu.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+appMenu.addItem(withTitle: "Quit axclick", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+appMenuItem.submenu = appMenu
+app.mainMenu = mainMenu
+
 controller.setup()
 app.run()

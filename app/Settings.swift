@@ -37,10 +37,15 @@ struct HotKey: Equatable {
         self.keyLabel = keyLabel
     }
 
-    /// A shortcut typed in the recorder; nil without ⌘, ⌥ or ⌃, since it would fire while typing.
+    /// A shortcut typed in the recorder. Rejects shortcuts that would steal everyday keys:
+    /// plain keys and ⇧-keys fire while typing, and one modifier with a letter (⌘W, ⌃C) is
+    /// usually an app shortcut. One modifier is fine with Space or a function key.
     init?(event: NSEvent) {
         let f = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard f.contains(.command) || f.contains(.option) || f.contains(.control) else { return nil }
+        let count = [f.contains(.command), f.contains(.shift), f.contains(.option), f.contains(.control)].filter { $0 }.count
+        let functionKeys = [kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10, kVK_F11, kVK_F12]
+        guard count >= 2 || Int(event.keyCode) == kVK_Space || functionKeys.contains(Int(event.keyCode)) else { return nil }
         var m: UInt32 = 0
         if f.contains(.command) { m |= UInt32(cmdKey) }
         if f.contains(.shift) { m |= UInt32(shiftKey) }
@@ -181,7 +186,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     @objc func record() {
         guard monitor == nil else { return }
         shortcutButton.title = "Type a shortcut…"
-        message.stringValue = "Use ⌘, ⌥ or ⌃ with a key. Esc cancels."
+        message.stringValue = "Use two modifiers with a key (like ⌘⇧Space), or one with Space. Esc cancels."
         controller.unregisterHotKey() // so pressing the current shortcut records it instead of firing
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.capture(event)
