@@ -24,7 +24,7 @@ cat > "$app/Contents/Info.plist" <<'EOF'
   <key>CFBundleExecutable</key><string>axclick</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.3.0</string>
+  <key>CFBundleShortVersionString</key><string>0.3.1</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
 </dict>
