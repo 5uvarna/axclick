@@ -2,6 +2,8 @@
 
 **Click anything on your Mac with the keyboard.** A free, open-source Homerow alternative.
 
+**Website:** [5uvarna.github.io/axclick](https://5uvarna.github.io/axclick/)
+
 Press **⌘⇧Space** and a short label appears on every button, link, menu and field in the app in front. Type a label and axclick clicks it, precisely, through the macOS Accessibility API instead of guessing at screen coordinates.
 
 ```
