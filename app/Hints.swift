@@ -141,6 +141,88 @@ func postClick(at p: CGPoint, right: Bool = false, flags: CGEventFlags = []) {
     }
 }
 
+// MARK: - Search text and scroll areas
+
+/// The words a person sees on an element, for search: its title, description, placeholder,
+/// help text or value, or else the text inside it (Chrome puts link text in child elements).
+func elementText(_ el: AXUIElement) -> String {
+    func strings(_ e: AXUIElement) -> [String] {
+        let names = [kAXTitleAttribute, kAXDescriptionAttribute, "AXPlaceholderValue", kAXHelpAttribute, kAXValueAttribute] as CFArray
+        var values: CFArray?
+        guard AXUIElementCopyMultipleAttributeValues(e, names, AXCopyMultipleAttributeOptions(rawValue: 0), &values) == .success,
+              let v = values as? [AnyObject] else { return [] }
+        return v.compactMap { $0 as? String }.filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+    var parts = strings(el)
+    if parts.isEmpty {
+        var queue: [(AXUIElement, Int)] = ((attr(el, kAXChildrenAttribute) as [AXUIElement]?) ?? []).map { ($0, 1) }
+        var visited = 0
+        while !queue.isEmpty, visited < 12, parts.count < 3 {
+            let (e, depth) = queue.removeFirst()
+            visited += 1
+            parts += strings(e)
+            if depth < 3 { queue += ((attr(e, kAXChildrenAttribute) as [AXUIElement]?) ?? []).map { ($0, depth + 1) } }
+        }
+    }
+    // Chrome often repeats a link's name as its title and description.
+    var seen = Set<String>()
+    parts = parts.filter { seen.insert($0.lowercased()).inserted }
+    return String(parts.joined(separator: " ").prefix(200))
+}
+
+struct ScrollArea {
+    let ref: AXUIElement
+    let frame: CGRect
+}
+
+/// Scrollable areas in the focused window, largest first. Falls back to the window itself.
+func collectScrollAreas(pid: pid_t) -> [ScrollArea] {
+    let app = AXUIElementCreateApplication(pid)
+    AXUIElementSetMessagingTimeout(app, 0.3)
+    AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+    guard let window: AXUIElement = attr(app, kAXFocusedWindowAttribute),
+          let windowFrame = info(window).frame else { return [] }
+
+    var out: [ScrollArea] = []
+    var nodes = 0
+    let deadline = Date().addingTimeInterval(1.0)
+    func walk(_ el: AXUIElement, depth: Int) {
+        guard depth < 60, nodes < maxNodes, Date() < deadline else { return }
+        nodes += 1
+        let (role, frame, children) = info(el)
+        if let f = frame, f.width > 0, f.height > 0, !f.intersects(windowFrame) { return }
+        if role == "AXScrollArea" || role == "AXWebArea", let f = frame?.intersection(windowFrame),
+           f.width >= 60, f.height >= 60,
+           !out.contains(where: { abs($0.frame.minX - f.minX) < 4 && abs($0.frame.minY - f.minY) < 4
+                                   && abs($0.frame.maxX - f.maxX) < 4 && abs($0.frame.maxY - f.maxY) < 4 }) {
+            out.append(ScrollArea(ref: el, frame: f))
+        }
+        for child in children { walk(child, depth: depth + 1) }
+    }
+    walk(window, depth: 0)
+    if out.isEmpty { out = [ScrollArea(ref: window, frame: windowFrame)] }
+    return Array(out.sorted { $0.frame.width * $0.frame.height > $1.frame.width * $1.frame.height }.prefix(9))
+}
+
+/// Jumps an area to its top or bottom by setting its vertical scroll bar. Returns false when the
+/// area has no settable scroll bar (web pages, for example).
+func jumpScrollBar(_ area: AXUIElement, toEnd: Bool) -> Bool {
+    let bar: AXUIElement? = attr(area, kAXVerticalScrollBarAttribute)
+        ?? ((attr(area, kAXChildrenAttribute) as [AXUIElement]?) ?? []).first {
+            (attr($0, kAXRoleAttribute) as String?) == kAXScrollBarRole
+                && (attr($0, kAXOrientationAttribute) as String?) == kAXVerticalOrientationValue
+        }
+    guard let bar = bar else { return false }
+    return AXUIElementSetAttributeValue(bar, kAXValueAttribute as CFString, NSNumber(value: toEnd ? 1.0 : 0.0)) == .success
+}
+
+/// Posts a scroll at a point without moving the pointer. Positive dy scrolls down, positive dx right.
+func postScroll(at p: CGPoint, dx: Int32, dy: Int32) {
+    let e = CGEvent(scrollWheelEvent2Source: nil, units: .pixel, wheelCount: 2, wheel1: -dy, wheel2: -dx, wheel3: 0)
+    e?.location = p
+    e?.post(tap: .cghidEventTap)
+}
+
 // MARK: - Overlay
 
 struct Hint {
@@ -148,28 +230,50 @@ struct Hint {
     let target: Target
 }
 
-final class HintView: NSView {
-    var hints: [(label: String, point: NSPoint)] = [] // point: left edge, vertical center
-    var typed = "" { didSet { needsDisplay = true } }
+/// One screen's overlay: yellow labels, outlined areas (scroll mode) and a status banner.
+final class OverlayView: NSView {
+    struct Label { var text: String; var point: NSPoint; var selected = false } // point: left edge, vertical center
+    var labels: [Label] = []
+    var boxes: [(rect: NSRect, selected: Bool)] = []
+    var typed = ""         // dims the typed part of each label and hides labels that don't match
+    var banner: String?
 
     override func draw(_ dirtyRect: NSRect) {
+        for b in boxes {
+            let path = NSBezierPath(roundedRect: b.rect.insetBy(dx: 2, dy: 2), xRadius: 6, yRadius: 6)
+            path.lineWidth = b.selected ? 4 : 2
+            if !b.selected { path.setLineDash([6, 4], count: 2, phase: 0) }
+            (b.selected ? NSColor.systemBlue : NSColor.systemGray).withAlphaComponent(0.9).setStroke()
+            path.stroke()
+        }
+
         let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .bold)
-        for h in hints where h.label.hasPrefix(typed) {
-            let text = NSMutableAttributedString(string: h.label, attributes: [.font: font, .foregroundColor: NSColor.black])
+        for l in labels where l.text.hasPrefix(typed) {
+            let fg: NSColor = l.selected ? .white : .black
+            let text = NSMutableAttributedString(string: l.text, attributes: [.font: font, .foregroundColor: fg])
             if !typed.isEmpty {
-                text.addAttribute(.foregroundColor, value: NSColor.black.withAlphaComponent(0.35),
-                                  range: NSRange(location: 0, length: typed.count))
+                text.addAttribute(.foregroundColor, value: fg.withAlphaComponent(0.35), range: NSRange(location: 0, length: typed.count))
             }
             let size = text.size()
-            var box = NSRect(x: h.point.x, y: h.point.y - (size.height + 4) / 2, width: size.width + 8, height: size.height + 4)
+            var box = NSRect(x: l.point.x, y: l.point.y - (size.height + 4) / 2, width: size.width + 8, height: size.height + 4)
             box.origin.x = min(max(box.minX, bounds.minX), bounds.maxX - box.width)
             box.origin.y = min(max(box.minY, bounds.minY), bounds.maxY - box.height)
             let path = NSBezierPath(roundedRect: box, xRadius: 4, yRadius: 4)
-            NSColor(calibratedRed: 1, green: 0.85, blue: 0.25, alpha: 0.95).setFill()
+            (l.selected ? NSColor.systemBlue : NSColor(calibratedRed: 1, green: 0.85, blue: 0.25, alpha: 0.95)).setFill()
             path.fill()
             NSColor.black.withAlphaComponent(0.45).setStroke()
             path.stroke()
             text.draw(at: NSPoint(x: box.minX + 4, y: box.minY + 2))
+        }
+
+        if let banner = banner {
+            let text = NSAttributedString(string: banner, attributes: [
+                .font: NSFont.systemFont(ofSize: 15, weight: .medium), .foregroundColor: NSColor.white])
+            let size = text.size()
+            let box = NSRect(x: bounds.midX - size.width / 2 - 14, y: bounds.minY + 80, width: size.width + 28, height: size.height + 16)
+            NSColor.black.withAlphaComponent(0.8).setFill()
+            NSBezierPath(roundedRect: box, xRadius: 10, yRadius: 10).fill()
+            text.draw(at: NSPoint(x: box.minX + 14, y: box.minY + 8))
         }
     }
 }

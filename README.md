@@ -16,12 +16,16 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 - **Home-row labels.** Labels start with `A S D F J K L`, so the common ones are quick to type.
 - **Keeps your focus.** The app in front stays active while labels are showing, so open menus and popovers stay open.
 - **Works in most apps**, including Chrome, Electron apps like VS Code, Finder, menus and dialogs.
+- **Search by text.** Press `/` and type the words on a button or link, like "save" or "sign in", instead of its label.
+- **Scroll mode.** Press **⌘⇧J** and scroll the window with `j` `k` `h` `l`, half a page with `d` `u`, or jump to the top or bottom with `g` `G`.
 - **Right-click and ⌘-click** from the keyboard.
-- **Your own shortcut.** Change the hotkey in Settings, and turn on launch at login.
+- **Your own shortcuts.** Change both shortcuts in Settings, and turn on launch at login.
 - **A command-line tool** for scripts and automation.
 - **Small and dependency-free.** Plain Swift with no frameworks beyond what macOS ships.
 
 ## Keys
+
+### Labels
 
 | Key | Action |
 |---|---|
@@ -30,7 +34,30 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 | `Shift` + last letter | Right-click |
 | `⌘` + last letter | ⌘-click (e.g. open a link in a new tab) |
 | `Backspace` | Remove the last typed letter |
+| `/` | Search by text instead |
 | `Esc` | Cancel |
+
+### Search (after `/`)
+
+| Key | Action |
+|---|---|
+| Type text | Keep only elements whose text matches. Exact matches come first |
+| `Return` | Click the selected match (`Shift`+`Return` right-clicks, `⌘`+`Return` ⌘-clicks) |
+| `Tab` / `↓` | Next match (`Shift`+`Tab` / `↑` for the previous one) |
+| `Backspace` | Delete a letter, or go back to labels when the search is empty |
+| `Esc` | Cancel |
+
+### Scroll mode
+
+| Key | Action |
+|---|---|
+| `⌘⇧J` | Start scroll mode (press again to stop). Change it in Settings |
+| `j` `k` / `↓` `↑` | Scroll down / up (hold `Shift` for faster) |
+| `h` `l` / `←` `→` | Scroll left / right |
+| `d` `u` | Half a page down / up |
+| `g` `G` | Jump to the top / bottom |
+| `1`–`9`, `Tab` | Pick another scrollable area when there are several (the selected one is outlined in blue) |
+| `Esc` | Stop |
 
 ## Install
 
@@ -76,7 +103,7 @@ It creates a self-signed certificate named "axclick Local Signing" in your login
 
 Click the keyboard icon in the menu bar and choose **Settings…** to:
 
-- **Change the shortcut.** Click the shortcut button and type a new one: two modifiers with a key (like ⌘⇧Space), or one modifier with Space or a function key. Shortcuts like ⌘W are refused, so you can't accidentally take over an everyday app shortcut.
+- **Change the shortcuts** for labels and scroll mode. Click a shortcut button and type a new one: two modifiers with a key (like ⌘⇧Space), or one modifier with Space or a function key. Shortcuts like ⌘W are refused, so you can't accidentally take over an everyday app shortcut.
 - **Launch at login.**
 
 ## Command-line tool
@@ -95,16 +122,19 @@ Leave out the app name to use the frontmost app. Ids change when the UI changes,
 
 ## How it works
 
-1. A Carbon hotkey listens for ⌘⇧Space.
+1. Carbon hotkeys listen for ⌘⇧Space and ⌘⇧J.
 2. axclick walks the front app's accessibility tree: the menu bar, any open menu, the focused window and any popovers or sheets. Subtrees scrolled out of view are skipped, and the walk stops after 1.5 seconds, so labels appear in about half a second.
 3. Labels are drawn in a transparent, click-through overlay window on each screen.
 4. While labels are showing, a keyboard event tap takes your keystrokes, so the app in front keeps focus without receiving them.
 5. When a label is complete, axclick calls `AXPress` on the element. For text fields, cells and elements without a press action, it posts a real click at the element's center.
+6. Search reads each element's title, description, placeholder or inner text in the background while labels show.
+7. Scroll mode finds the scroll areas in the focused window and posts scroll events at the selected one without moving the pointer. Top and bottom set the area's scroll bar directly when the app exposes one.
 
 ## Limitations
 
 - Apps that don't expose accessibility info (some games, some custom-drawn UIs) show few or no labels.
 - Very large pages may be cut off by the 1.5-second walk limit.
+- ⌘⇧J is also Chrome's Downloads shortcut. While axclick runs, scroll mode takes it. Change either shortcut in Settings if you need both.
 
 ## Contributing
 

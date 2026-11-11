@@ -14,21 +14,37 @@ struct HotKey: Equatable {
     var modifiers: UInt32 // Carbon mask: cmdKey, shiftKey, optionKey, controlKey
     var keyLabel: String
 
-    static let `default` = HotKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(cmdKey | shiftKey), keyLabel: "Space")
+    /// What a shortcut does. Each has its own saved shortcut and Carbon hotkey id.
+    enum Action: UInt32, CaseIterable {
+        case hints = 1, scroll = 2
 
-    static var saved: HotKey {
-        get {
-            let d = UserDefaults.standard
-            guard d.object(forKey: "hotKeyCode") != nil, let label = d.string(forKey: "hotKeyLabel") else { return .default }
-            return HotKey(keyCode: UInt32(d.integer(forKey: "hotKeyCode")),
-                          modifiers: UInt32(d.integer(forKey: "hotKeyModifiers")), keyLabel: label)
+        var title: String { self == .hints ? "Show hints" : "Scroll mode" }
+        var defaultsPrefix: String { self == .hints ? "hotKey" : "scrollHotKey" }
+        var defaultHotKey: HotKey {
+            self == .hints
+                ? HotKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(cmdKey | shiftKey), keyLabel: "Space")
+                : HotKey(keyCode: UInt32(kVK_ANSI_J), modifiers: UInt32(cmdKey | shiftKey), keyLabel: "J")
         }
-        set {
-            let d = UserDefaults.standard
-            d.set(Int(newValue.keyCode), forKey: "hotKeyCode")
-            d.set(Int(newValue.modifiers), forKey: "hotKeyModifiers")
-            d.set(newValue.keyLabel, forKey: "hotKeyLabel")
-        }
+    }
+
+    static func saved(_ action: Action) -> HotKey {
+        let d = UserDefaults.standard, p = action.defaultsPrefix
+        guard d.object(forKey: p + "Code") != nil, let label = d.string(forKey: p + "Label") else { return action.defaultHotKey }
+        return HotKey(keyCode: UInt32(d.integer(forKey: p + "Code")),
+                      modifiers: UInt32(d.integer(forKey: p + "Modifiers")), keyLabel: label)
+    }
+
+    static func save(_ hotKey: HotKey, for action: Action) {
+        let d = UserDefaults.standard, p = action.defaultsPrefix
+        d.set(Int(hotKey.keyCode), forKey: p + "Code")
+        d.set(Int(hotKey.modifiers), forKey: p + "Modifiers")
+        d.set(hotKey.keyLabel, forKey: p + "Label")
+    }
+
+    /// Whether a key event from the event tap is this shortcut.
+    func matches(keyCode: Int, flags: CGEventFlags) -> Bool {
+        keyCode == Int(self.keyCode)
+            && flags.intersection([.maskCommand, .maskShift, .maskAlternate, .maskControl]) == cgFlags
     }
 
     init(keyCode: UInt32, modifiers: UInt32, keyLabel: String) {
@@ -146,10 +162,11 @@ func verticalStack(_ views: [NSView], spacing: CGFloat = 14) -> NSStackView {
 
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     var window: NSWindow?
-    let shortcutButton = NSButton(title: "", target: nil, action: nil)
+    var buttons: [HotKey.Action: NSButton] = [:]
     let loginCheckbox = NSButton(checkboxWithTitle: "Launch axclick at login", target: nil, action: nil)
     let message = textLabel("", size: 11, color: .secondaryLabelColor)
     var monitor: Any?
+    var recording: HotKey.Action?
 
     func show() {
         if window == nil { build() }
@@ -158,36 +175,46 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     func build() {
-        shortcutButton.target = self
-        shortcutButton.action = #selector(record)
-        shortcutButton.bezelStyle = .rounded
+        var rows: [NSView] = []
+        for action in HotKey.Action.allCases {
+            let button = NSButton(title: "", target: self, action: #selector(record(_:)))
+            button.bezelStyle = .rounded
+            button.tag = Int(action.rawValue)
+            buttons[action] = button
+            let label = textLabel(action.title + ":")
+            label.widthAnchor.constraint(equalToConstant: 96).isActive = true
+            let row = NSStackView(views: [label, button])
+            row.spacing = 8
+            rows.append(row)
+        }
         loginCheckbox.target = self
         loginCheckbox.action = #selector(toggleLogin)
-        let row = NSStackView(views: [textLabel("Show hints:"), shortcutButton])
-        row.spacing = 8
-        let stack = verticalStack([
-            row, message, loginCheckbox,
+        let stack = verticalStack(rows + [
+            message, loginCheckbox,
             textLabel("axclick \(appVersion) · GPL-3.0 · github.com/5uvarna/axclick", size: 11, color: .secondaryLabelColor),
         ])
         window = makeWindow(title: "axclick Settings", content: stack)
         window?.delegate = self
     }
 
-    // Leaving the window mid-recording would otherwise leave the hotkey unregistered.
+    // Leaving the window mid-recording would otherwise leave the hotkeys unregistered.
     func windowDidResignKey(_ notification: Notification) {
         if monitor != nil { finish("") }
     }
 
     func refresh() {
-        shortcutButton.title = HotKey.saved.description
+        for (action, button) in buttons {
+            button.title = action == recording ? "Type a shortcut…" : HotKey.saved(action).description
+        }
         loginCheckbox.state = LoginItem.enabled ? .on : .off
     }
 
-    @objc func record() {
-        guard monitor == nil else { return }
-        shortcutButton.title = "Type a shortcut…"
+    @objc func record(_ sender: NSButton) {
+        guard monitor == nil, let action = HotKey.Action(rawValue: UInt32(sender.tag)) else { return }
+        recording = action
+        refresh()
         message.stringValue = "Use two modifiers with a key (like ⌘⇧Space), or one with Space. Esc cancels."
-        controller.unregisterHotKey() // so pressing the current shortcut records it instead of firing
+        controller.unregisterHotKeys() // so pressing a current shortcut records it instead of firing
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             self?.capture(event)
             return nil
@@ -195,14 +222,19 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
 
     func capture(_ event: NSEvent) {
+        guard let action = recording else { return }
         if event.keyCode == UInt16(kVK_Escape) { finish(""); return }
         guard let hotKey = HotKey(event: event) else { NSSound.beep(); return }
-        let previous = HotKey.saved
-        HotKey.saved = hotKey
-        if controller.registerHotKey() {
+        if let other = HotKey.Action.allCases.first(where: { $0 != action && HotKey.saved($0) == hotKey }) {
+            finish("\(hotKey.description) is already the \(other.title.lowercased()) shortcut.")
+            return
+        }
+        let previous = HotKey.saved(action)
+        HotKey.save(hotKey, for: action)
+        if controller.registerHotKey(action) {
             finish("")
         } else {
-            HotKey.saved = previous
+            HotKey.save(previous, for: action)
             finish("\(hotKey.description) is already used by another app. Try another.")
         }
     }
@@ -210,7 +242,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     func finish(_ note: String) {
         if let m = monitor { NSEvent.removeMonitor(m) }
         monitor = nil
-        controller.registerHotKey()
+        recording = nil
+        controller.registerHotKeys()
         message.stringValue = note
         refresh()
     }
@@ -241,7 +274,7 @@ final class WelcomeWindowController: NSObject {
     }
 
     func build() {
-        let hotKey = HotKey.saved.description
+        let hotKey = HotKey.saved(.hints).description
         let openButton = NSButton(title: "Open Accessibility Settings", target: self, action: #selector(openSettings))
         openButton.bezelStyle = .rounded
         openButton.keyEquivalent = "\r"
@@ -252,7 +285,7 @@ final class WelcomeWindowController: NSObject {
         loginCheckbox.action = #selector(toggleLogin)
         let stack = verticalStack([
             textLabel("Welcome to axclick", size: 18, bold: true),
-            textLabel("Press \(hotKey) in any app and a label appears on every button, link and menu. Type a label to click it."),
+            textLabel("Press \(hotKey) in any app and a label appears on every button, link and menu. Type a label to click it, or press / and type its text. \(HotKey.saved(.scroll).description) scrolls with the keyboard."),
             textLabel("To find and press those elements, axclick needs Accessibility access. It only looks at the app in front, only while labels are showing, and never sends anything over the network."),
             textLabel("In System Settings, turn on axclick in the list. If it isn't there, click + and add it from your Applications folder.",
                       color: .secondaryLabelColor),
@@ -262,7 +295,7 @@ final class WelcomeWindowController: NSObject {
     }
 
     func update() {
-        let hotKey = HotKey.saved.description
+        let hotKey = HotKey.saved(.hints).description
         if AXIsProcessTrusted() {
             status.stringValue = "✅ Access granted. Press \(hotKey) in any app to try it."
             doneButton.isEnabled = true
