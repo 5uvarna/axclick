@@ -6,10 +6,10 @@
 #
 # The tag v<version> must already be pushed to GitHub, since the checksum is of GitHub's tarball.
 set -euo pipefail
-cd "$(dirname "$0")/.."
 
 version=${1:?usage: release-formula.sh <version> <tap checkout>}
-tap=${2:?usage: release-formula.sh <version> <tap checkout>}
+tap=$(cd "${2:?usage: release-formula.sh <version> <tap checkout>}" && pwd) # before the cd below
+cd "$(dirname "$0")/.."
 url="https://github.com/5uvarna/axclick/archive/refs/tags/v$version.tar.gz"
 
 sha=$(curl -fsSL "$url" | shasum -a 256 | cut -d' ' -f1)
