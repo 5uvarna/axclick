@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>axclick: click anything on your Mac with the keyboard</title>
+<meta name="description" content="axclick is a free, open-source Homerow alternative for macOS. Press ⌘⇧Space, type a label, and click any button, link, menu or field without touching the mouse.">
+<link rel="canonical" href="https://5uvarna.github.io/axclick/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="axclick: click anything on your Mac with the keyboard">
+<meta property="og:description" content="A free, open-source Homerow alternative for macOS. Press ⌘⇧Space, type a label, done.">
+<meta property="og:url" content="https://5uvarna.github.io/axclick/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23111'/><rect x='6' y='9' width='20' height='14' rx='3' fill='%23ffd43b'/><text x='16' y='20' font-family='Menlo,monospace' font-size='9' font-weight='700' text-anchor='middle' fill='%23111'>AX</text></svg>">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "axclick",
+  "description": "Click anything on your Mac with the keyboard. A free, open-source Homerow alternative that uses the macOS Accessibility API.",
+  "operatingSystem": "macOS 13 or later",
+  "applicationCategory": "UtilitiesApplication",
+  "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+  "url": "https://5uvarna.github.io/axclick/",
+  "downloadUrl": "https://github.com/5uvarna/axclick",
+  "softwareVersion": "0.1.0",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<style>
+:root {
+  --bg: #fbfaf7; --fg: #16161a; --muted: #5d5d66; --line: #e4e2dc; --card: #ffffff;
+  --hint: #ffd43b; --hint-fg: #1a1a1a; --accent: #1d4ed8; --code-bg: #f1efe9;
+  --win: #ffffff; --win-bar: #eceae4; --btn: #f4f3ef;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111114; --fg: #ececf0; --muted: #a0a0ab; --line: #2a2a31; --card: #18181d;
+    --accent: #7aa2ff; --code-bg: #1e1e24; --win: #1c1c22; --win-bar: #26262d; --btn: #2a2a32;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111114; --fg: #ececf0; --muted: #a0a0ab; --line: #2a2a31; --card: #18181d;
+  --accent: #7aa2ff; --code-bg: #1e1e24; --win: #1c1c22; --win-bar: #26262d; --btn: #2a2a32;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+a { color: var(--accent); }
+code, kbd, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+header.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
+.logo { font-weight: 700; font-size: 19px; color: var(--fg); text-decoration: none; display: flex; gap: 8px; align-items: center; }
+.logo span.mark { background: var(--hint); color: var(--hint-fg); font: 700 12px/1 ui-monospace, Menlo, monospace; padding: 5px 6px; border-radius: 5px; }
+nav a { color: var(--muted); text-decoration: none; margin-left: 18px; font-size: 15px; }
+nav a:hover { color: var(--fg); }
+
+.hero { padding: 48px 0 24px; text-align: center; }
+.hero h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 16px; }
+.hero p.lede { font-size: clamp(18px, 2.4vw, 21px); color: var(--muted); max-width: 640px; margin: 0 auto 28px; }
+kbd {
+  display: inline-block; padding: 1px 7px; border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 6px; background: var(--card); font-size: 0.88em; color: var(--fg);
+}
+.cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.install {
+  display: flex; align-items: center; gap: 10px; background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 10px 10px 16px; max-width: 100%;
+}
+.install code { font-size: 15px; white-space: nowrap; overflow-x: auto; }
+button.copy {
+  border: 0; background: var(--fg); color: var(--bg); font: 600 13px/1 inherit; font-family: inherit;
+  padding: 9px 12px; border-radius: 7px; cursor: pointer; flex: none;
+}
+.btn {
+  display: inline-flex; align-items: center; padding: 12px 18px; border-radius: 10px; font-weight: 600;
+  text-decoration: none; border: 1px solid var(--line); color: var(--fg); background: var(--card);
+}
+.small { font-size: 14px; color: var(--muted); }
+
+/* Demo */
+.demo { margin: 40px auto 8px; max-width: 760px; }
+.window { background: var(--win); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.12); }
+.bar { background: var(--win-bar); padding: 10px 12px; display: flex; gap: 7px; align-items: center; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.dot:nth-child(2) { background: #febc2e; } .dot:nth-child(3) { background: #28c840; }
+.bar .title { margin-left: 10px; font-size: 13px; color: var(--muted); }
+.stage { position: relative; padding: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.el {
+  position: relative; background: var(--btn); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 12px; font-size: 14px; text-align: center; transition: transform .15s, background .15s;
+}
+.el.wide { grid-column: span 2; text-align: left; color: var(--muted); }
+.el.pressed { background: var(--accent); color: #fff; transform: scale(.97); }
+.tag {
+  position: absolute; top: -9px; left: -6px; background: var(--hint); color: var(--hint-fg);
+  font: 700 12px/1 ui-monospace, Menlo, monospace; padding: 4px 5px; border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3); opacity: 0; transition: opacity .12s;
+}
+.stage.on .tag { opacity: 1; }
+.tag.dim { opacity: .25 !important; }
+.tag b { color: #b45309; }
+.status { text-align: center; margin-top: 14px; font-size: 15px; color: var(--muted); min-height: 1.6em; }
+
+section { padding: 56px 0 8px; }
+h2 { font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.01em; margin: 0 0 20px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.card p { margin: 0; color: var(--muted); font-size: 16px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 16px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 14px; color: var(--muted); font-weight: 600; }
+.tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.plan h3 { margin: 0 0 4px; }
+.price { font-size: 30px; font-weight: 700; margin: 6px 0 10px; }
+.plan ul { padding-left: 20px; margin: 0 0 16px; color: var(--muted); }
+.plan pre { background: var(--code-bg); border-radius: 8px; padding: 12px; font-size: 13px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.soon { display: inline-block; font-size: 13px; font-weight: 600; background: var(--code-bg); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+
+details { border-bottom: 1px solid var(--line); padding: 14px 0; }
+summary { cursor: pointer; font-weight: 600; }
+details p { color: var(--muted); margin: 8px 0 0; }
+
+footer { padding: 48px 0 40px; color: var(--muted); font-size: 14px; text-align: center; }
+
+@media (max-width: 600px) {
+  nav a.hide-sm { display: none; }
+  .hero h1 br { display: none; }
+  td:first-child { white-space: nowrap; }
+  .install { padding-left: 12px; }
+  .stage { grid-template-columns: repeat(2, 1fr); padding: 18px; }
+  .el.wide { grid-column: span 2; }
+  .install code { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="#"><span class="mark">AX</span> axclick</a>
+    <nav>
+      <a class="hide-sm" href="#how">How it works</a>
+      <a href="#get">Get it</a>
+      <a href="https://github.com/5uvarna/axclick">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1>Click anything on your Mac<br>with the keyboard.</h1>
+      <p class="lede">Press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Space</kbd>, type the label on a button, link, menu or field, and axclick clicks it. Free and open source, a Homerow alternative.</p>
+      <div class="cta">
+        <div class="install">
+          <code id="brew">brew install 5uvarna/tap/axclick</code>
+          <button class="copy" data-copy="brew">Copy</button>
+        </div>
+        <a class="btn" href="https://github.com/5uvarna/axclick">View on GitHub</a>
+      </div>
+      <p class="small">macOS 13 or later · GPL v3 · no network access</p>
+    </div>
+
+    <div class="demo" aria-label="Animated example: labels appear on a window and the Save button is clicked by typing SD">
+      <div class="window">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="title">Untitled document</span></div>
+        <div class="stage" id="stage">
+          <div class="el"><span class="tag">AS</span>New</div>
+          <div class="el"><span class="tag">AD</span>Open…</div>
+          <div class="el" id="save"><span class="tag">SD</span>Save</div>
+          <div class="el wide"><span class="tag">AF</span>Search notes</div>
+          <div class="el"><span class="tag">AJ</span>Share</div>
+          <div class="el"><span class="tag">AK</span>Format</div>
+          <div class="el"><span class="tag">AL</span>Delete</div>
+          <div class="el"><span class="tag">SA</span>Settings</div>
+        </div>
+      </div>
+      <div class="status" id="status">&nbsp;</div>
+    </div>
+
+    <section id="features">
+      <h2>Why axclick</h2>
+      <div class="grid">
+        <div class="card"><h3>Precise clicks</h3><p>Elements come from the macOS Accessibility API, so axclick presses the element itself instead of guessing at screen coordinates.</p></div>
+        <div class="card"><h3>Home-row labels</h3><p>Labels start on <code>A S D F J K L</code>, so the most common ones are two quick keystrokes.</p></div>
+        <div class="card"><h3>Keeps your focus</h3><p>The app in front stays active while labels show, so open menus and popovers stay open.</p></div>
+        <div class="card"><h3>Works where you work</h3><p>Chrome, Electron apps like VS Code, Finder, menus, dialogs and the menu bar.</p></div>
+        <div class="card"><h3>Right-click and ⌘-click</h3><p>Hold <kbd>Shift</kbd> on the last letter to right-click, or <kbd>⌘</kbd> to open a link in a new tab.</p></div>
+        <div class="card"><h3>Small and private</h3><p>Plain Swift, no dependencies, no network connections. It only reads the front app while labels show.</p></div>
+      </div>
+    </section>
+
+    <section id="how">
+      <h2>How it works</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Key</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>⌘</kbd><kbd>⇧</kbd><kbd>Space</kbd></td><td>Show labels. Press again to cancel. You can change the shortcut in Settings.</td></tr>
+            <tr><td>Type a label</td><td>Click that element</td></tr>
+            <tr><td><kbd>Shift</kbd> + last letter</td><td>Right-click</td></tr>
+            <tr><td><kbd>⌘</kbd> + last letter</td><td>⌘-click, for example to open a link in a new tab</td></tr>
+            <tr><td><kbd>Backspace</kbd></td><td>Remove the last letter</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Cancel</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">There's also an <code>axclick</code> command-line tool that lists and presses elements from scripts.</p>
+    </section>
+
+    <section id="get">
+      <h2>Get axclick</h2>
+      <div class="plans">
+        <div class="card plan">
+          <h3>Homebrew</h3>
+          <div class="price">Free</div>
+          <ul><li>Builds from source on your Mac</li><li>Needs Xcode or the Command Line Tools</li><li>Updates with <code>brew upgrade</code></li></ul>
+          <pre><code>brew install 5uvarna/tap/axclick</code></pre>
+        </div>
+        <div class="card plan">
+          <h3>Build it yourself</h3>
+          <div class="price">Free</div>
+          <ul><li>Full source code, GPL v3</li><li>Needs the Command Line Tools</li><li>Change anything you like</li></ul>
+          <pre><code>git clone https://github.com/5uvarna/axclick.git
+cd axclick && ./build.sh install</code></pre>
+        </div>
+        <div class="card plan">
+          <h3>Ready-to-run app <span class="soon">Coming soon</span></h3>
+          <div class="price">$9.99 <span class="small">once</span></div>
+          <ul><li>Signed and notarized download</li><li>No developer tools needed</li><li>Supports ongoing development</li></ul>
+          <a class="btn" href="https://github.com/5uvarna/axclick/releases" aria-disabled="true">Follow releases on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>Questions</h2>
+      <details><summary>Why does it need Accessibility access?</summary><p>That's how macOS lets an app see the buttons and links in other apps and press them. axclick only reads the app in front, only while labels are showing, and makes no network connections. The source is on GitHub if you want to check.</p></details>
+      <details><summary>Which apps does it work with?</summary><p>Most apps that support macOS accessibility, including Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings and the menu bar. Apps that draw their own UI without accessibility info, like some games, show few or no labels.</p></details>
+      <details><summary>Is it really free?</summary><p>Yes. Install it with Homebrew or build it from source for free. A paid, ready-to-run download is planned for people who'd rather not use developer tools, and it pays for further work.</p></details>
+      <details><summary>Can I change the shortcut?</summary><p>Yes. Click the keyboard icon in the menu bar, choose Settings…, and type a new shortcut. You can also turn on launch at login there.</p></details>
+    </section>
+  </main>
+
+  <footer>
+    axclick is open source under the <a href="https://github.com/5uvarna/axclick/blob/main/LICENSE">GNU GPL v3</a>.
+    <a href="https://github.com/5uvarna/axclick">Source</a> ·
+    <a href="https://github.com/5uvarna/axclick/issues">Report an issue</a>
+  </footer>
+</div>
+
+<script>
+document.querySelectorAll('button.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var text = document.getElementById(b.dataset.copy).textContent;
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
+  });
+});
+
+(function () {
+  var stage = document.getElementById('stage'), status = document.getElementById('status');
+  var save = document.getElementById('save'), tags = stage.querySelectorAll('.tag');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    stage.classList.add('on'); status.textContent = 'Press ⌘⇧Space, then type SD to click Save';
+    return;
+  }
+  var steps = [
+    [900,  function () { status.textContent = '⌘⇧Space'; stage.classList.add('on'); }],
+    [900,  function () { status.textContent = 'S'; tags.forEach(function (t) { if (t.textContent[0] !== 'S') t.classList.add('dim'); else t.innerHTML = '<b>S</b>' + t.textContent.slice(1); }); }],
+    [700,  function () { status.textContent = 'SD → Save clicked'; stage.classList.remove('on'); save.classList.add('pressed'); }],
+    [1800, function () { save.classList.remove('pressed'); status.innerHTML = '&nbsp;'; tags.forEach(function (t) { t.classList.remove('dim'); t.textContent = t.textContent; }); }]
+  ];
+  var i = 0;
+  (function run() { var s = steps[i]; setTimeout(function () { s[1](); i = (i + 1) % steps.length; run(); }, s[0]); })();
+})();
+</script>
+</body>
+</html>
