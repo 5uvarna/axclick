@@ -15,14 +15,15 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 - **Keeps your focus.** The app in front stays active while labels are showing, so open menus and popovers stay open.
 - **Works in most apps**, including Chrome, Electron apps like VS Code, Finder, menus and dialogs.
 - **Right-click and ⌘-click** from the keyboard.
+- **Your own shortcut.** Change the hotkey in Settings, and turn on launch at login.
 - **A command-line tool** for scripts and automation.
-- **Small and dependency-free.** Two Swift files with no frameworks beyond what macOS ships.
+- **Small and dependency-free.** Plain Swift with no frameworks beyond what macOS ships.
 
 ## Keys
 
 | Key | Action |
 |---|---|
-| `⌘⇧Space` | Show labels (press again to cancel) |
+| `⌘⇧Space` | Show labels (press again to cancel). Change it in Settings |
 | Type a label | Click that element |
 | `Shift` + last letter | Right-click |
 | `⌘` + last letter | ⌘-click (e.g. open a link in a new tab) |
@@ -31,7 +32,9 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 
 ## Install
 
-axclick is built from source for now (needs Xcode Command Line Tools: `xcode-select --install`).
+### Build it yourself (free)
+
+Needs the Xcode Command Line Tools (`xcode-select --install`).
 
 ```bash
 git clone https://github.com/5uvarna/axclick.git
@@ -43,9 +46,26 @@ This builds the app, installs it to `~/Applications/axclick.app` and starts it. 
 
 ### Grant Accessibility access
 
-axclick needs Accessibility access to read and press UI elements. On first launch macOS prompts you. Otherwise, go to **System Settings → Privacy & Security → Accessibility** and turn on **axclick**.
+On first launch, axclick opens a welcome window that explains why it needs Accessibility access and opens the right page in System Settings. Turn on **axclick** there and the window confirms when access is granted.
 
-> Builds are signed ad hoc, so macOS treats each rebuild as a new app. After rebuilding, turn axclick off and on again in Accessibility settings.
+axclick only reads the app in front, only while labels are showing, and makes no network connections.
+
+### Keep access across rebuilds (optional)
+
+By default your builds are signed ad hoc, so macOS treats each rebuild as a new app and you have to grant Accessibility access again. If you rebuild often, run this once:
+
+```bash
+./scripts/setup-signing.sh
+```
+
+It creates a self-signed certificate named "axclick Local Signing" in your login keychain, and `build.sh` signs with it from then on. Grant access one more time after the next build, and it sticks from then on. The certificate only signs your own local builds.
+
+## Settings
+
+Click the keyboard icon in the menu bar and choose **Settings…** to:
+
+- **Change the shortcut.** Click the shortcut button and type a new one. It needs ⌘, ⌥ or ⌃.
+- **Launch at login.**
 
 ## Command-line tool
 
@@ -73,8 +93,11 @@ Leave out the app name to use the frontmost app. Ids change when the UI changes,
 
 - Apps that don't expose accessibility info (some games, some custom-drawn UIs) show few or no labels.
 - Very large pages may be cut off by the 1.5-second walk limit.
-- The hotkey is fixed in code (`hotKeyCode` and `hotKeyModifiers` in `app/main.swift`).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions come with license terms that let the maintainer keep distributing official builds.
 
 ## License
 
-[MIT](LICENSE)
+[GNU GPL v3](LICENSE). You're free to use, study, change and share axclick. If you distribute a modified version, you have to share its source under the same license.

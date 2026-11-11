@@ -2,14 +2,14 @@
 # Builds the axclick menu bar app and command-line tool.
 #   ./build.sh            build into build/
 #   ./build.sh install    also install the app to ~/Applications and restart it
-# Each rebuild changes the ad-hoc signature, so macOS asks for Accessibility access again.
+# Run scripts/setup-signing.sh once so rebuilds keep their Accessibility access.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 app=build/axclick.app
 rm -rf build
 mkdir -p "$app/Contents/MacOS"
-swiftc -O app/main.swift -o "$app/Contents/MacOS/axclick"
+swiftc -O app/*.swift -o "$app/Contents/MacOS/axclick"
 swiftc -O cli/main.swift -o build/axclick
 
 cat > "$app/Contents/Info.plist" <<'EOF'
@@ -28,9 +28,15 @@ cat > "$app/Contents/Info.plist" <<'EOF'
 </plist>
 EOF
 
-codesign --force --sign - --identifier io.github.5uvarna.axclick "$app"
-codesign --force --sign - build/axclick
-echo "built $app and build/axclick"
+# Sign with the local certificate from scripts/setup-signing.sh when it exists, so macOS keeps
+# the Accessibility permission across rebuilds. Otherwise fall back to an ad-hoc signature.
+identity="-"
+if security find-certificate -c "axclick Local Signing" >/dev/null 2>&1; then
+    identity="axclick Local Signing"
+fi
+codesign --force --sign "$identity" --identifier io.github.5uvarna.axclick "$app"
+codesign --force --sign "$identity" build/axclick
+echo "built $app and build/axclick (signed with: ${identity/#-/ad hoc})"
 
 if [ "${1:-}" = install ]; then
     pkill -f "axclick.app/Contents/MacOS/axclick" || true
