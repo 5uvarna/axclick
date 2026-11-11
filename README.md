@@ -96,7 +96,7 @@ cd axclick
 ./build.sh install
 ```
 
-This builds the app, installs it to `~/Applications/axclick.app` and starts it. A keyboard icon appears in the menu bar.
+This builds the app, installs it to `~/Applications/axclick.app` and starts it. An axe icon appears in the menu bar.
 
 ### Grant Accessibility access
 
@@ -116,7 +116,7 @@ It creates a self-signed certificate named "axclick Local Signing" in your login
 
 ## Settings
 
-Click the keyboard icon in the menu bar and choose **Settings…** to:
+Click the axe icon in the menu bar and choose **Settings…** to:
 
 - **Change the shortcuts** for labels and scroll mode. Click a shortcut button and type a new one: two modifiers with a key (like ⌘⇧Space), or one modifier with Space or a function key. Shortcuts like ⌘W are refused, so you can't accidentally take over an everyday app shortcut.
 - **Launch at login.**

@@ -11,7 +11,9 @@
 <meta property="og:description" content="A free, open-source Homerow alternative for macOS. Press ⌘⇧Space, type a label, done.">
 <meta property="og:url" content="https://5uvarna.github.io/axclick/">
 <meta name="twitter:card" content="summary">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23111'/><rect x='6' y='9' width='20' height='14' rx='3' fill='%23ffd43b'/><text x='16' y='20' font-family='Menlo,monospace' font-size='9' font-weight='700' text-anchor='middle' fill='%23111'>AX</text></svg>">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="apple-touch-icon" href="logo.png">
+<meta property="og:image" content="https://5uvarna.github.io/axclick/logo.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -54,7 +56,7 @@ code, kbd, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
 header.top { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
 .logo { font-weight: 700; font-size: 19px; color: var(--fg); text-decoration: none; display: flex; gap: 8px; align-items: center; }
-.logo span.mark { background: var(--hint); color: var(--hint-fg); font: 700 12px/1 ui-monospace, Menlo, monospace; padding: 5px 6px; border-radius: 5px; }
+.logo img { width: 28px; height: 28px; display: block; }
 nav a { color: var(--muted); text-decoration: none; margin-left: 18px; font-size: 15px; }
 nav a:hover { color: var(--fg); }
 
@@ -145,7 +147,7 @@ footer { padding: 48px 0 40px; color: var(--muted); font-size: 14px; text-align:
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="logo" href="#"><span class="mark">AX</span> axclick</a>
+    <a class="logo" href="#"><img src="logo.svg" alt=""> axclick</a>
     <nav>
       <a class="hide-sm" href="#how">How it works</a>
       <a href="#get">Get it</a>
@@ -263,7 +265,7 @@ cd axclick && ./build.sh install</code></pre>
       <details><summary>Why does it need Accessibility access?</summary><p>That's how macOS lets an app see the buttons and links in other apps and press them. axclick only reads the app in front, only while labels are showing, and makes no network connections. The source is on GitHub if you want to check.</p></details>
       <details><summary>Which apps does it work with?</summary><p>Most apps that support macOS accessibility, including Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings and the menu bar. Apps that draw their own UI without accessibility info, like some games, show few or no labels. For those, grid mode lets you click anywhere on any screen.</p></details>
       <details><summary>Is it really free?</summary><p>Yes. Install it with Homebrew or build it from source for free. A paid, ready-to-run download is planned for people who'd rather not use developer tools, and it pays for further work.</p></details>
-      <details><summary>Can I change the shortcuts?</summary><p>Yes. Click the keyboard icon in the menu bar, choose Settings…, and type a new shortcut for labels or scroll mode. You can also turn on launch at login there.</p></details>
+      <details><summary>Can I change the shortcuts?</summary><p>Yes. Click the axe icon in the menu bar, choose Settings…, and type a new shortcut for labels or scroll mode. You can also turn on launch at login there.</p></details>
       <details><summary>What if I don't know the label?</summary><p>Press <kbd>/</kbd> while labels show and type the text on the button instead, like “save”. Exact matches come first, and <kbd>Tab</kbd> moves to the next one.</p></details>
     </section>
   </main>

@@ -40,7 +40,7 @@ final class Controller: NSObject {
 
     func setup() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "axclick")
+        item.button?.image = menuBarIcon()
         let menu = NSMenu()
         menuItems[.hints] = menu.addItem(withTitle: "Show hints", action: #selector(toggleHints), keyEquivalent: "")
         menuItems[.scroll] = menu.addItem(withTitle: "Scroll mode", action: #selector(toggleScroll), keyEquivalent: "")

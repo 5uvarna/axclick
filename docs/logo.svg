@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="axclick">
+  <rect width="64" height="64" rx="14" fill="#ffd43b"/>
+  <g transform="translate(33 35) rotate(35) scale(0.8) translate(-30 -32)" fill="#16161a">
+    <!-- handle -->
+    <rect x="28.5" y="13" width="7" height="45" rx="3.5"/>
+    <!-- head: poll on the right, blade flaring left to a curved edge -->
+    <path d="M40 12 L40 28 L30 25.5 Q20 33 7 36 Q1 21 7 5 Q20 9 30 15.5 Z"/>
+  </g>
+</svg>

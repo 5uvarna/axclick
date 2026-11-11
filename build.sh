@@ -8,7 +8,9 @@ cd "$(dirname "$0")"
 
 app=build/axclick.app
 rm -rf build
-mkdir -p "$app/Contents/MacOS"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+# The icon is drawn by app/Logo.swift; regenerate it with scripts/make-icon after changing the logo.
+cp app/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 swiftc -O app/*.swift -o "$app/Contents/MacOS/axclick"
 swiftc -O cli/main.swift -o build/axclick
 
@@ -20,6 +22,7 @@ cat > "$app/Contents/Info.plist" <<'EOF'
   <key>CFBundleIdentifier</key><string>io.github.5uvarna.axclick</string>
   <key>CFBundleName</key><string>axclick</string>
   <key>CFBundleExecutable</key><string>axclick</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>0.3.0</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
