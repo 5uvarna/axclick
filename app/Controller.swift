@@ -445,11 +445,10 @@ final class Controller: NSObject {
     /// A Cocoa screen frame (bottom-left origin) in the top-left space that clicks use.
     func topLeft(_ f: NSRect) -> CGRect { CGRect(x: f.minX, y: primaryHeight - f.maxY, width: f.width, height: f.height) }
 
-    /// Wide regions split 3 across and 2 down on Q W E / A S D. Tall ones split 2 across and
-    /// 3 down on Q W / A S / Z X, so cells stay roughly square and each letter sits where its
-    /// key is on the keyboard.
+    /// Splits a region 3×3 on Q W E / A S D / Z X C, so each letter sits where its key is on the
+    /// keyboard. Every cell keeps the screen's shape, however far you zoom.
     func gridSplit(_ r: CGRect) -> [(label: String, rect: CGRect)] {
-        let rows: [[String]] = r.width >= r.height ? [["Q", "W", "E"], ["A", "S", "D"]] : [["Q", "W"], ["A", "S"], ["Z", "X"]]
+        let rows = [["Q", "W", "E"], ["A", "S", "D"], ["Z", "X", "C"]]
         let h = r.height / CGFloat(rows.count), w = r.width / CGFloat(rows[0].count)
         return rows.enumerated().flatMap { (y, row) in
             row.enumerated().map { (x, key) in
