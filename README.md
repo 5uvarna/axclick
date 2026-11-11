@@ -17,7 +17,7 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 - **Keeps your focus.** The app in front stays active while labels are showing, so open menus and popovers stay open.
 - **Works in most apps**, including Chrome, Electron apps like VS Code, Finder, menus and dialogs.
 - **Menu bar icons too.** Wi-Fi, Bluetooth, sound, battery, Control Center and other apps' menu bar icons get labels.
-- **Grid mode** for anything without labels (games, canvases, remote desktops). Press `Space` while labels show, then zoom in with `Q W E` / `A S D` / `Z X C` until the dot is where you want to click.
+- **Grid mode** for anything without labels (games, canvases, remote desktops). Press `Space` while labels show, then press three keys on the `Q W E R` / `A S D F` / `Z X C V` grid to click anywhere.
 - **Search by text.** Press `/` and type the words on a button or link, like "save" or "sign in", instead of its label.
 - **Scroll mode.** Press **⌘⇧J** and scroll the window with `j` `k` `h` `l`, half a page with `d` `u`, or jump to the top or bottom with `g` `G`.
 - **Right-click and ⌘-click** from the keyboard.
@@ -52,17 +52,15 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 
 ### Grid mode (after `Space`, or from the menu bar icon)
 
-The screen with the pointer splits into nine cells, named after the keys in the same spot on your keyboard: `Q W E` on top, `A S D` in the middle, `Z X C` at the bottom. Press one to zoom into that cell, which splits the same way again. A red dot marks where a click will land. Grid mode also appears on its own when an app has nothing to label.
+The screen with the pointer splits into a 4×3 grid, each cell named after the key in the same spot under your left hand: `Q W E R` on top, `A S D F` in the middle, `Z X C V` at the bottom. Press one to zoom into that cell, which splits the same way again. A red dot marks where a click will land. Once a cell is smaller than 45 points, axclick clicks it right away: that's the third key on a laptop or 1080p screen, the fourth on larger displays. Grid mode also appears on its own when an app has nothing to label.
 
 | Key | Action |
 |---|---|
-| `Q` `W` `E` / `A` `S` `D` / `Z` `X` `C` | Zoom into that cell |
-| `Return` / `Space` | Click the red dot (`Shift` right-clicks, `⌘` ⌘-clicks) |
+| `Q` `W` `E` `R` / `A` `S` `D` `F` / `Z` `X` `C` `V` | Zoom into that cell (the last key clicks; hold `Shift` to right-click, `⌘` to ⌘-click) |
+| `Return` / `Space` | Click the red dot now, without zooming further |
 | `Backspace` | Zoom back out |
 | `1`–`9` | Switch to another screen |
 | `Esc` | Cancel |
-
-Four keys get you within a few points of anything on the screen.
 
 ### Scroll mode
 

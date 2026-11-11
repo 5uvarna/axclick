@@ -445,10 +445,10 @@ final class Controller: NSObject {
     /// A Cocoa screen frame (bottom-left origin) in the top-left space that clicks use.
     func topLeft(_ f: NSRect) -> CGRect { CGRect(x: f.minX, y: primaryHeight - f.maxY, width: f.width, height: f.height) }
 
-    /// Splits a region 3×3 on Q W E / A S D / Z X C, so each letter sits where its key is on the
-    /// keyboard. Every cell keeps the screen's shape, however far you zoom.
+    /// Splits a region 4×3 on Q W E R / A S D F / Z X C V, so each letter sits where its key is
+    /// on the keyboard. Four columns make cells small enough to click after three keys.
     func gridSplit(_ r: CGRect) -> [(label: String, rect: CGRect)] {
-        let rows = [["Q", "W", "E"], ["A", "S", "D"], ["Z", "X", "C"]]
+        let rows = [["Q", "W", "E", "R"], ["A", "S", "D", "F"], ["Z", "X", "C", "V"]]
         let h = r.height / CGFloat(rows.count), w = r.width / CGFloat(rows[0].count)
         return rows.enumerated().flatMap { (y, row) in
             row.enumerated().map { (x, key) in
@@ -475,8 +475,9 @@ final class Controller: NSObject {
         }
         guard let cell = gridSplit(region).first(where: { $0.label == key }) else { NSSound.beep(); return }
         regions.append(cell.rect)
-        // Once a cell is a few points across there's nothing finer to pick: click it.
-        if cell.rect.width < 8 && cell.rect.height < 8 {
+        // A cell under 45 points hits almost any button at its middle, so click without waiting
+        // for Return. That's the third key on a laptop or 1080p screen, the fourth on bigger ones.
+        if cell.rect.width < 45 && cell.rect.height < 45 {
             gridClick(CGPoint(x: cell.rect.midX, y: cell.rect.midY), flags: flags)
             return
         }
