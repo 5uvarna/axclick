@@ -134,7 +134,7 @@ Leave out the app name to use the frontmost app. Ids change when the UI changes,
 
 - Apps that don't expose accessibility info (some games, some custom-drawn UIs) show few or no labels.
 - Very large pages may be cut off by the 1.5-second walk limit.
-- ⌘⇧J is also Chrome's Downloads shortcut. While axclick runs, scroll mode takes it. Change either shortcut in Settings if you need both.
+- axclick's shortcuts work in every app, so they take over any app shortcut that uses the same keys. If one clashes with an app you use, change it in Settings.
 
 ## Contributing
 
