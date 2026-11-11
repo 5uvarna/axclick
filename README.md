@@ -32,6 +32,16 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 
 ## Install
 
+### Homebrew (free, builds from source)
+
+```bash
+brew install 5uvarna/tap/axclick
+```
+
+If Homebrew asks you to trust the tap first, run `brew trust --formula 5uvarna/tap/axclick` and try again. Homebrew builds axclick on your Mac, so it needs up-to-date Xcode or Command Line Tools. Then start it with `open $(brew --prefix axclick)/axclick.app`.
+
+Homebrew builds are signed ad hoc, so after each `brew upgrade axclick` turn axclick off and on again in Accessibility settings.
+
 ### Build it yourself (free)
 
 Needs the Xcode Command Line Tools (`xcode-select --install`).

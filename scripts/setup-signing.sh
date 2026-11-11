@@ -12,8 +12,17 @@ set -euo pipefail
 name="axclick Local Signing"
 keychain="$HOME/Library/Keychains/login.keychain-db"
 
+allow_codesign() {
+    # Without this, macOS asks before every codesign run and a build waits on the dialog.
+    # It asks for your login password once, here in the terminal.
+    echo "Allowing codesign to use the key. Enter your Mac login password when asked."
+    security set-key-partition-list -S apple-tool:,apple: -s -l "$name" "$keychain" >/dev/null
+    echo "Done: builds now sign without asking."
+}
+
 if security find-certificate -c "$name" "$keychain" >/dev/null 2>&1; then
-    echo "\"$name\" already exists in your login keychain. Nothing to do."
+    echo "\"$name\" already exists in your login keychain."
+    allow_codesign
     exit 0
 fi
 
@@ -40,8 +49,7 @@ pass=$(/usr/bin/openssl rand -hex 16)
 /usr/bin/openssl pkcs12 -export -inkey "$tmp/key.pem" -in "$tmp/cert.pem" \
     -name "$name" -passout "pass:$pass" -out "$tmp/cert.p12"
 
-# -T lets codesign use the key without asking for your keychain password on every build.
 security import "$tmp/cert.p12" -k "$keychain" -P "$pass" -T /usr/bin/codesign
-
 echo "Created \"$name\" in your login keychain."
+allow_codesign
 echo "Next: run ./build.sh install, then turn on axclick in Accessibility settings one last time."

@@ -30,8 +30,9 @@ EOF
 
 # Sign with the local certificate from scripts/setup-signing.sh when it exists, so macOS keeps
 # the Accessibility permission across rebuilds. Otherwise fall back to an ad-hoc signature.
+# AXCLICK_ADHOC=1 forces ad hoc, for package builds (Homebrew) that must not touch a keychain.
 identity="-"
-if security find-certificate -c "axclick Local Signing" >/dev/null 2>&1; then
+if [ "${AXCLICK_ADHOC:-}" != 1 ] && security find-certificate -c "axclick Local Signing" >/dev/null 2>&1; then
     identity="axclick Local Signing"
 fi
 codesign --force --sign "$identity" --identifier io.github.5uvarna.axclick "$app"
