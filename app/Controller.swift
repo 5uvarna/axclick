@@ -6,7 +6,7 @@ import ApplicationServices
 import Carbon.HIToolbox
 
 final class Controller: NSObject {
-    enum Mode { case off, hints, search, scroll }
+    enum Mode { case off, hints, search, scroll, grid }
 
     var mode = Mode.off
     var loading = false
@@ -19,6 +19,11 @@ final class Controller: NSObject {
     var query = ""
     var matches: [Int] = []     // indexes into hints
     var selected = 0
+
+    // Grid: two-letter cells over every screen, then a 5×5 grid inside the chosen cell
+    var gridCells: [(label: String, rect: CGRect)] = []
+    var gridCell: CGRect?       // the chosen cell, once its label is typed
+    var subCells: [(label: String, rect: CGRect)] = []
 
     // Scroll
     var areas: [ScrollArea] = []
@@ -40,6 +45,7 @@ final class Controller: NSObject {
         let menu = NSMenu()
         menuItems[.hints] = menu.addItem(withTitle: "Show hints", action: #selector(toggleHints), keyEquivalent: "")
         menuItems[.scroll] = menu.addItem(withTitle: "Scroll mode", action: #selector(toggleScroll), keyEquivalent: "")
+        menu.addItem(withTitle: "Grid mode (Space while labels show)", action: #selector(showGrid), keyEquivalent: "").target = self
         menuItems.values.forEach { $0.target = self }
         menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
         menu.addItem(.separator())
@@ -47,7 +53,10 @@ final class Controller: NSObject {
         item.menu = menu
         statusItem = item
         registerHotKeys()
-        if !AXIsProcessTrusted() { welcome.show() }
+        if !AXIsProcessTrusted() { welcome.show(); return }
+        // Learn which apps have menu bar icons now, so the first labels don't wait for it.
+        let pids = NSWorkspace.shared.runningApplications.map { $0.processIdentifier }
+        DispatchQueue.global(qos: .utility).async { _ = collectMenuExtras(pids: pids) }
     }
 
     @objc func openSettings() { settings.show() }
@@ -100,9 +109,19 @@ final class Controller: NSObject {
         guard let app = NSWorkspace.shared.frontmostApplication else { return }
         loading = true
         let pid = app.processIdentifier
+        let pids = NSWorkspace.shared.runningApplications.map { $0.processIdentifier }
         DispatchQueue.global(qos: .userInteractive).async {
             if action == .hints {
-                let targets = collectTargets(pid: pid)
+                // Menu bar icons come from every running app, read alongside the front window.
+                var extras: [Target] = []
+                let group = DispatchGroup()
+                DispatchQueue.global(qos: .userInteractive).async(group: group) { extras = collectMenuExtras(pids: pids) }
+                var targets = collectTargets(pid: pid)
+                group.wait()
+                for e in extras where !targets.contains(where: {
+                    abs($0.frame.midX - e.frame.midX) < 6 && abs($0.frame.midY - e.frame.midY) < 6 }) {
+                    targets.append(e)
+                }
                 DispatchQueue.main.async { self.loading = false; self.showHints(targets) }
             } else {
                 let areas = collectScrollAreas(pid: pid)
@@ -151,6 +170,7 @@ final class Controller: NSObject {
         case .hints: hintKey(code: code, flags: flags, event: event)
         case .search: searchKey(code: code, flags: flags, event: event)
         case .scroll: scrollKey(code: code, flags: flags, event: event)
+        case .grid: gridKey(code: code, flags: flags, event: event)
         case .off: break
         }
     }
@@ -189,6 +209,8 @@ final class Controller: NSObject {
             let local = { (p: NSPoint) in NSPoint(x: p.x - origin.x, y: p.y - origin.y) }
             view.labels = []
             view.boxes = []
+            view.cells = []
+            view.tint = false
             view.banner = nil
             view.typed = ""
             var focus: NSPoint?   // where the banner belongs: the screen with the thing in focus
@@ -228,6 +250,26 @@ final class Controller: NSObject {
                     view.banner = "Scroll   j k  h l   d u half page   g G top/bottom"
                         + (areas.count > 1 ? "   1–\(areas.count) area" : "") + "   esc done"
                 }
+            case .grid:
+                view.tint = true
+                view.typed = gridCell == nil ? typed : ""
+                let cells = gridCell == nil ? gridCells : subCells
+                for c in cells {
+                    let r = cocoa(c.rect)
+                    guard window.frame.intersects(r) else { continue }
+                    view.cells.append(NSRect(origin: local(r.origin), size: r.size))
+                    view.labels.append(.init(text: c.label, point: local(NSPoint(x: r.midX, y: r.midY)), centered: true))
+                }
+                if let cell = gridCell {
+                    let r = cocoa(cell)
+                    focus = NSPoint(x: r.midX, y: r.midY)
+                    if window.frame.intersects(r) { view.boxes.append((NSRect(origin: local(r.origin), size: r.size), true)) }
+                    if window.frame.contains(focus!) || NSScreen.screens.count == 1 {
+                        view.banner = "Type a letter to click there   ↩ click the middle   ⌫ back   esc cancel"
+                    }
+                } else if let screen = NSScreen.main, window.frame == screen.frame {
+                    view.banner = "Grid   type a cell's letters   ⌫ back   esc cancel"
+                }
             case .off:
                 break
             }
@@ -247,13 +289,17 @@ final class Controller: NSObject {
         query = ""
         matches = []
         areas = []
+        gridCells = []
+        gridCell = nil
+        subCells = []
         generation += 1
     }
 
     // MARK: Hints
 
     func showHints(_ targets: [Target]) {
-        guard !targets.isEmpty else { NSSound.beep(); return }
+        // Nothing to label (a game, a canvas, a remote desktop): offer the grid instead.
+        guard !targets.isEmpty else { showGrid(); return }
         // Reading order (rows, then left to right) keeps labels predictable.
         let sorted = targets.sorted {
             let r0 = Int($0.frame.midY / 12), r1 = Int($1.frame.midY / 12)
@@ -284,6 +330,7 @@ final class Controller: NSObject {
             return
         }
         if NSEvent(cgEvent: event)?.characters == "/" { startSearch(); return }
+        if code == kVK_Space { showGrid(); return }
         guard let chars = NSEvent(cgEvent: event)?.charactersIgnoringModifiers?.uppercased(),
               let c = chars.first, hintAlphabet.contains(c) else { return }
         let candidate = typed + String(c)
@@ -321,12 +368,19 @@ final class Controller: NSObject {
         updateMatches()
     }
 
+    /// Lowercased, without accents or punctuation, so "wifi" finds "Wi‑Fi" and "cafe" finds "Café".
+    func searchable(_ s: String) -> String {
+        let folded = s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).lowercased()
+        let kept = folded.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) || $0 == " " }
+        return String(String.UnicodeScalarView(kept)).split(separator: " ").joined(separator: " ")
+    }
+
     func updateMatches() {
-        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
+        let q = searchable(query)
         if q.isEmpty || texts == nil {
             matches = q.isEmpty ? Array(hints.indices) : []
         } else {
-            let lowered = texts!.map { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) }
+            let lowered = texts!.map(searchable)
             // Exact matches first, then matches at the start of a word, then anywhere.
             func quality(_ t: String) -> Int? {
                 if t == q { return 0 }
@@ -373,6 +427,86 @@ final class Controller: NSObject {
                   chars.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) }) else { return }
             query += chars
             updateMatches()
+        }
+    }
+
+    // MARK: Grid
+
+    /// Covers every screen with cells about 100 points wide, each named by two letters.
+    @objc func showGrid() {
+        if mode == .off {
+            guard AXIsProcessTrusted(), ensureTap() else { welcome.show(); return }
+            openOverlay()
+        }
+        var rects: [CGRect] = []
+        var size: CGFloat = 100
+        while true {
+            rects = []
+            for screen in NSScreen.screens {
+                // Screen frames are Cocoa (bottom-left); clicks use the top-left space.
+                let f = screen.frame
+                let top = CGRect(x: f.minX, y: primaryHeight - f.maxY, width: f.width, height: f.height)
+                let cols = max(4, Int((f.width / size).rounded())), rows = max(3, Int((f.height / size).rounded()))
+                let w = top.width / CGFloat(cols), h = top.height / CGFloat(rows)
+                for r in 0..<rows {
+                    for c in 0..<cols {
+                        rects.append(CGRect(x: top.minX + CGFloat(c) * w, y: top.minY + CGFloat(r) * h, width: w, height: h))
+                    }
+                }
+            }
+            // Keep every cell to two letters, even with several large screens.
+            if rects.count <= hintAlphabet.count * hintAlphabet.count { break }
+            size *= 1.2
+        }
+        gridCells = zip(labels(count: rects.count), rects).map { (label: $0, rect: $1) }
+        gridCell = nil
+        subCells = []
+        typed = ""
+        mode = .grid
+        render()
+    }
+
+    func gridKey(code: Int, flags: CGEventFlags, event: CGEvent) {
+        if code == kVK_Delete {
+            if gridCell != nil { gridCell = nil; typed = "" } else if !typed.isEmpty { typed.removeLast() }
+            render()
+            return
+        }
+        if let cell = gridCell, code == kVK_Return || code == kVK_Space {
+            gridClick(CGPoint(x: cell.midX, y: cell.midY), flags: flags)
+            return
+        }
+        guard let chars = NSEvent(cgEvent: event)?.charactersIgnoringModifiers?.uppercased(),
+              let c = chars.first, hintAlphabet.contains(c) else { return }
+        if gridCell != nil {
+            guard let sub = subCells.first(where: { $0.label == String(c) }) else { NSSound.beep(); return }
+            gridClick(CGPoint(x: sub.rect.midX, y: sub.rect.midY), flags: flags)
+            return
+        }
+        let candidate = typed + String(c)
+        let found = gridCells.filter { $0.label.hasPrefix(candidate) }
+        guard !found.isEmpty else { NSSound.beep(); return }
+        typed = candidate
+        if let hit = found.first(where: { $0.label == candidate }) {
+            // Zoom into the cell: 5×5 smaller cells, one letter each.
+            gridCell = hit.rect
+            let w = hit.rect.width / 5, h = hit.rect.height / 5
+            let rects = (0..<25).map { i in
+                CGRect(x: hit.rect.minX + CGFloat(i % 5) * w, y: hit.rect.minY + CGFloat(i / 5) * h, width: w, height: h)
+            }
+            subCells = zip(labels(count: 25), rects).map { (label: $0, rect: $1) }
+        }
+        render()
+    }
+
+    func gridClick(_ p: CGPoint, flags: CGEventFlags) {
+        hide()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            if flags.contains(.maskShift) {
+                postClick(at: p, right: true)
+            } else {
+                postClick(at: p, flags: flags.contains(.maskCommand) ? .maskCommand : [])
+            }
         }
     }
 

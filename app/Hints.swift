@@ -129,6 +129,52 @@ func collectTargets(pid: pid_t) -> [Target] {
     return out
 }
 
+/// Menu bar icons (Wi-Fi, Bluetooth, sound, Control Center and third-party apps' status items).
+/// Each app exposes its own in an "extras" menu bar. Asking all ~100 running apps takes a few
+/// hundred ms, so after the first scan only apps known to have icons are asked, and a full scan
+/// runs in the background to pick up apps that added one since.
+private var extrasPids: Set<pid_t>?
+private let extrasLock = NSLock()
+
+func collectMenuExtras(pids: [pid_t]) -> [Target] {
+    extrasLock.lock()
+    let known = extrasPids
+    extrasLock.unlock()
+    if let known = known {
+        DispatchQueue.global(qos: .utility).async { _ = scanMenuExtras(pids: pids, full: true) }
+        return scanMenuExtras(pids: pids.filter { known.contains($0) }, full: false)
+    }
+    return scanMenuExtras(pids: pids, full: true)
+}
+
+/// `full`: every running app was asked, so the result says which apps have icons.
+private func scanMenuExtras(pids: [pid_t], full: Bool) -> [Target] {
+    let lock = NSLock()
+    var out: [Target] = []
+    var found = Set<pid_t>()
+    DispatchQueue.concurrentPerform(iterations: pids.count) { i in
+        let app = AXUIElementCreateApplication(pids[i])
+        AXUIElementSetMessagingTimeout(app, 0.15)
+        guard let bar: AXUIElement = attr(app, kAXExtrasMenuBarAttribute) else { return }
+        var items: [Target] = []
+        for item in info(bar).children {
+            let (role, frame, _) = info(item)
+            guard let f = frame, f.width >= 4, f.height >= 4 else { continue }
+            items.append(Target(ref: item, role: role.isEmpty ? "AXMenuBarItem" : role, frame: f))
+        }
+        lock.lock()
+        out += items
+        if !items.isEmpty { found.insert(pids[i]) }
+        lock.unlock()
+    }
+    if full {
+        extrasLock.lock()
+        extrasPids = found
+        extrasLock.unlock()
+    }
+    return out
+}
+
 func postClick(at p: CGPoint, right: Bool = false, flags: CGEventFlags = []) {
     let src = CGEventSource(stateID: .hidSystemState)
     let (down, up, button): (CGEventType, CGEventType, CGMouseButton) =
@@ -232,13 +278,36 @@ struct Hint {
 
 /// One screen's overlay: yellow labels, outlined areas (scroll mode) and a status banner.
 final class OverlayView: NSView {
-    struct Label { var text: String; var point: NSPoint; var selected = false } // point: left edge, vertical center
+    struct Label {
+        var text: String
+        var point: NSPoint      // left edge (or center, if centered) and vertical center
+        var selected = false
+        var centered = false
+    }
     var labels: [Label] = []
     var boxes: [(rect: NSRect, selected: Bool)] = []
+    var cells: [NSRect] = []    // grid mode
+    var tint = false            // darkens the screen a little so the grid stands out
     var typed = ""         // dims the typed part of each label and hides labels that don't match
     var banner: String?
 
     override func draw(_ dirtyRect: NSRect) {
+        if tint {
+            NSColor.black.withAlphaComponent(0.12).setFill()
+            bounds.fill()
+        }
+        if !cells.isEmpty {
+            let grid = NSBezierPath()
+            for c in cells { grid.appendRect(c) }
+            grid.lineWidth = 1
+            NSColor.white.withAlphaComponent(0.55).setStroke()
+            grid.stroke()
+            NSColor.black.withAlphaComponent(0.35).setStroke()
+            let shadow = NSBezierPath()
+            for c in cells { shadow.appendRect(c.offsetBy(dx: 1, dy: -1)) }
+            shadow.lineWidth = 1
+            shadow.stroke()
+        }
         for b in boxes {
             let path = NSBezierPath(roundedRect: b.rect.insetBy(dx: 2, dy: 2), xRadius: 6, yRadius: 6)
             path.lineWidth = b.selected ? 4 : 2
@@ -255,7 +324,8 @@ final class OverlayView: NSView {
                 text.addAttribute(.foregroundColor, value: fg.withAlphaComponent(0.35), range: NSRange(location: 0, length: typed.count))
             }
             let size = text.size()
-            var box = NSRect(x: l.point.x, y: l.point.y - (size.height + 4) / 2, width: size.width + 8, height: size.height + 4)
+            var box = NSRect(x: l.centered ? l.point.x - (size.width + 8) / 2 : l.point.x,
+                             y: l.point.y - (size.height + 4) / 2, width: size.width + 8, height: size.height + 4)
             box.origin.x = min(max(box.minX, bounds.minX), bounds.maxX - box.width)
             box.origin.y = min(max(box.minY, bounds.minY), bounds.maxY - box.height)
             let path = NSBezierPath(roundedRect: box, xRadius: 4, yRadius: 4)

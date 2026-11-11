@@ -16,6 +16,8 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 - **Home-row labels.** Labels start with `A S D F J K L`, so the common ones are quick to type.
 - **Keeps your focus.** The app in front stays active while labels are showing, so open menus and popovers stay open.
 - **Works in most apps**, including Chrome, Electron apps like VS Code, Finder, menus and dialogs.
+- **Menu bar icons too.** Wi-Fi, Bluetooth, sound, battery, Control Center and other apps' menu bar icons get labels.
+- **Grid mode** for anything without labels (games, canvases, remote desktops). Press `Space` while labels show, pick a cell, then a spot inside it.
 - **Search by text.** Press `/` and type the words on a button or link, like "save" or "sign in", instead of its label.
 - **Scroll mode.** Press **⌘⇧J** and scroll the window with `j` `k` `h` `l`, half a page with `d` `u`, or jump to the top or bottom with `g` `G`.
 - **Right-click and ⌘-click** from the keyboard.
@@ -35,6 +37,7 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 | `⌘` + last letter | ⌘-click (e.g. open a link in a new tab) |
 | `Backspace` | Remove the last typed letter |
 | `/` | Search by text instead |
+| `Space` | Grid mode instead |
 | `Esc` | Cancel |
 
 ### Search (after `/`)
@@ -45,6 +48,18 @@ Press **⌘⇧Space** and a short label appears on every button, link, menu and 
 | `Return` | Click the selected match (`Shift`+`Return` right-clicks, `⌘`+`Return` ⌘-clicks) |
 | `Tab` / `↓` | Next match (`Shift`+`Tab` / `↑` for the previous one) |
 | `Backspace` | Delete a letter, or go back to labels when the search is empty |
+| `Esc` | Cancel |
+
+### Grid mode (after `Space`, or from the menu bar icon)
+
+A grid of two-letter cells covers every screen. It also appears on its own when an app has nothing to label.
+
+| Key | Action |
+|---|---|
+| Type a cell's letters | Zoom into that cell: it splits into 25 smaller cells, one letter each |
+| Type a letter | Click the middle of that small cell (`Shift` right-clicks, `⌘` ⌘-clicks) |
+| `Return` / `Space` | Click the middle of the whole cell |
+| `Backspace` | Go back a step |
 | `Esc` | Cancel |
 
 ### Scroll mode
@@ -123,7 +138,7 @@ Leave out the app name to use the frontmost app. Ids change when the UI changes,
 ## How it works
 
 1. Carbon hotkeys listen for ⌘⇧Space and ⌘⇧J.
-2. axclick walks the front app's accessibility tree: the menu bar, any open menu, the focused window and any popovers or sheets. Subtrees scrolled out of view are skipped, and the walk stops after 1.5 seconds, so labels appear in about half a second.
+2. axclick walks the front app's accessibility tree: the menu bar, any open menu, the focused window and any popovers or sheets. At the same time it reads the menu bar icons of the apps that have them. Subtrees scrolled out of view are skipped, and the walk stops after 1.5 seconds, so labels appear in about half a second.
 3. Labels are drawn in a transparent, click-through overlay window on each screen.
 4. While labels are showing, a keyboard event tap takes your keystrokes, so the app in front keeps focus without receiving them.
 5. When a label is complete, axclick calls `AXPress` on the element. For text fields, cells and elements without a press action, it posts a real click at the element's center.

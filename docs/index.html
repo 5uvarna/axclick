@@ -191,6 +191,8 @@ footer { padding: 48px 0 40px; color: var(--muted); font-size: 14px; text-align:
         <div class="card"><h3>Home-row labels</h3><p>Labels start on <code>A S D F J K L</code>, so the most common ones are two quick keystrokes.</p></div>
         <div class="card"><h3>Search by text</h3><p>Press <kbd>/</kbd> and type the words on a button, like “save” or “sign in”. <kbd>Return</kbd> clicks the best match.</p></div>
         <div class="card"><h3>Scroll mode</h3><p>Press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>J</kbd> and scroll with <kbd>j</kbd> <kbd>k</kbd>, half a page with <kbd>d</kbd> <kbd>u</kbd>, or jump to the top or bottom with <kbd>g</kbd> <kbd>G</kbd>.</p></div>
+        <div class="card"><h3>Menu bar icons</h3><p>Wi-Fi, Bluetooth, sound, battery, Control Center and other apps' menu bar icons get labels too.</p></div>
+        <div class="card"><h3>Grid for everything else</h3><p>Games, canvases and remote desktops don't expose buttons. Press <kbd>Space</kbd> for a grid, pick a cell, then a spot inside it.</p></div>
         <div class="card"><h3>Keeps your focus</h3><p>The app in front stays active while labels show, so open menus and popovers stay open.</p></div>
         <div class="card"><h3>Works where you work</h3><p>Chrome, Electron apps like VS Code, Finder, menus, dialogs and the menu bar.</p></div>
         <div class="card"><h3>Right-click and ⌘-click</h3><p>Hold <kbd>Shift</kbd> on the last letter to right-click, or <kbd>⌘</kbd> to open a link in a new tab.</p></div>
@@ -210,6 +212,7 @@ footer { padding: 48px 0 40px; color: var(--muted); font-size: 14px; text-align:
             <tr><td><kbd>⌘</kbd> + last letter</td><td>⌘-click, for example to open a link in a new tab</td></tr>
             <tr><td><kbd>Backspace</kbd></td><td>Remove the last letter</td></tr>
             <tr><td><kbd>/</kbd></td><td>Search by text, then <kbd>Return</kbd> to click and <kbd>Tab</kbd> for the next match</td></tr>
+            <tr><td><kbd>Space</kbd></td><td>Grid mode: type a cell's two letters, then one letter for the spot inside it</td></tr>
             <tr><td><kbd>Esc</kbd></td><td>Cancel</td></tr>
           </tbody>
         </table>
@@ -258,7 +261,7 @@ cd axclick && ./build.sh install</code></pre>
     <section id="faq">
       <h2>Questions</h2>
       <details><summary>Why does it need Accessibility access?</summary><p>That's how macOS lets an app see the buttons and links in other apps and press them. axclick only reads the app in front, only while labels are showing, and makes no network connections. The source is on GitHub if you want to check.</p></details>
-      <details><summary>Which apps does it work with?</summary><p>Most apps that support macOS accessibility, including Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings and the menu bar. Apps that draw their own UI without accessibility info, like some games, show few or no labels.</p></details>
+      <details><summary>Which apps does it work with?</summary><p>Most apps that support macOS accessibility, including Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings and the menu bar. Apps that draw their own UI without accessibility info, like some games, show few or no labels. For those, grid mode lets you click anywhere on any screen.</p></details>
       <details><summary>Is it really free?</summary><p>Yes. Install it with Homebrew or build it from source for free. A paid, ready-to-run download is planned for people who'd rather not use developer tools, and it pays for further work.</p></details>
       <details><summary>Can I change the shortcuts?</summary><p>Yes. Click the keyboard icon in the menu bar, choose Settings…, and type a new shortcut for labels or scroll mode. You can also turn on launch at login there.</p></details>
       <details><summary>What if I don't know the label?</summary><p>Press <kbd>/</kbd> while labels show and type the text on the button instead, like “save”. Exact matches come first, and <kbd>Tab</kbd> moves to the next one.</p></details>
