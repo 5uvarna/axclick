@@ -185,8 +185,18 @@ final class LicenseWindowController: NSObject {
     @objc func buy() { NSWorkspace.shared.open(License.buyURL) }
 
     @objc func removeLicense() {
-        License.remove()
-        refresh()
+        // Activating again counts against the key's limit, so make removing it deliberate.
+        let alert = NSAlert()
+        alert.messageText = "Remove the license from this Mac?"
+        alert.informativeText = "The reminder will come back. Activating the key again counts as one of its \(License.maxActivations) activations."
+        alert.addButton(withTitle: "Remove")
+        alert.addButton(withTitle: "Cancel")
+        guard let window = window else { return }
+        alert.beginSheetModal(for: window) { response in
+            guard response == .alertFirstButtonReturn else { return }
+            License.remove()
+            self.refresh()
+        }
     }
 }
 
