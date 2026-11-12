@@ -16,7 +16,7 @@ enum License {
     /// Each check counts one use on Gumroad, so this caps how many Macs one key unlocks.
     /// Gumroad can't tell machines apart, so a reinstall also counts; people over the limit
     /// can email for a reset.
-    static let maxActivations = 5
+    static let maxActivations = 10
 
     #if OFFICIAL
     static var isActive: Bool { savedKey() != nil }
@@ -81,7 +81,7 @@ extension License {
             return .invalid("This license's payment was disputed.")
         }
         if let uses = json["uses"] as? Int, uses > maxActivations {
-            return .invalid("This license has been activated \(uses) times, more than the \(maxActivations) allowed. Reply to your Gumroad receipt email to have it reset.")
+            return .invalid("This license has been activated \(uses) times, more than the \(maxActivations) allowed. Reply to your Gumroad receipt email and we'll sort it out.")
         }
         return .valid
     }
