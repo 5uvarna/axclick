@@ -164,6 +164,7 @@ footer { padding: 48px 0 40px; color: var(--muted); font-size: 14px; text-align:
           <code id="brew">brew install 5uvarna/tap/axclick</code>
           <button class="copy" data-copy="brew">Copy</button>
         </div>
+        <a class="btn" href="https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip">Download for Mac</a>
         <a class="btn" href="https://github.com/5uvarna/axclick">View on GitHub</a>
       </div>
       <p class="small">macOS 13 or later · GPL v3 · no tracking</p>
@@ -252,19 +253,24 @@ footer { padding: 48px 0 40px; color: var(--muted); font-size: 14px; text-align:
 cd axclick && ./build.sh install</code></pre>
         </div>
         <div class="card plan">
-          <h3>Ready-to-run app <span class="soon">Coming soon</span></h3>
+          <h3>Ready-to-run app</h3>
           <div class="price">Free</div>
-          <ul><li>Signed and notarized download</li><li>No developer tools needed</li><li>A gentle reminder after every 100 uses, at most once a week</li><li>A <strong>$9.99</strong> one-time license removes the reminder and supports development</li></ul>
-          <a class="btn" href="https://github.com/5uvarna/axclick/releases" aria-disabled="true">Follow releases on GitHub</a>
+          <ul><li>No developer tools needed</li><li>Keeps its Accessibility access across updates</li><li>A gentle reminder after every 100 uses, at most once a week</li><li>A <strong>$9.99</strong> one-time license removes the reminder and supports development</li></ul>
+          <div class="cta" style="justify-content:flex-start">
+            <a class="btn" href="https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip">Download</a>
+            <a class="btn" href="https://ash19x.gumroad.com/l/qvpxln">Buy a license</a>
+          </div>
+          <p class="small">macOS asks you to allow each download the first time you open it. <a href="#first-launch">How</a></p>
         </div>
       </div>
     </section>
 
     <section id="faq">
       <h2>Questions</h2>
+      <details id="first-launch"><summary>macOS says it can't check axclick for malware. Is it safe?</summary><p>The download isn't notarized by Apple yet, so the first time you open it macOS blocks it. To open it: try opening axclick once, then go to <strong>System Settings → Privacy &amp; Security</strong>, scroll down, and click <strong>Open Anyway</strong> next to the message about axclick. You'll do this once for each download, including updates. Your Accessibility permission and license carry over. The full source is on GitHub, and Homebrew builds it from that source if you'd rather not use the download.</p></details>
       <details><summary>Why does it need Accessibility access?</summary><p>That's how macOS lets an app see the buttons and links in other apps and press them. axclick only reads the app in front, only while labels are showing. It never sends anything about what you do anywhere: the only network request, in the downloadable app, is checking your license key with Gumroad once. The source is on GitHub if you want to check.</p></details>
       <details><summary>Which apps does it work with?</summary><p>Most apps that support macOS accessibility, including Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings and the menu bar. Apps that draw their own UI without accessibility info, like some games, show few or no labels. For those, grid mode lets you click anywhere on any screen.</p></details>
-      <details><summary>Is it really free?</summary><p>Yes, every feature, with no time limit. Homebrew and source builds have no reminders at all. The ready-to-run download, coming soon, is free too, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license removes it and pays for further work.</p></details>
+      <details><summary>Is it really free?</summary><p>Yes, every feature, with no time limit. Homebrew and source builds have no reminders at all. The ready-to-run download is free too, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license removes it and pays for further work.</p></details>
       <details><summary>Can I change the shortcuts?</summary><p>Yes. Click the axe icon in the menu bar, choose Settings…, and type a new shortcut for labels or scroll mode. You can also turn on launch at login there.</p></details>
       <details><summary>What if I don't know the label?</summary><p>Press <kbd>/</kbd> while labels show and type the text on the button instead, like “save”. Exact matches come first, and <kbd>Tab</kbd> moves to the next one.</p></details>
     </section>
@@ -278,6 +284,14 @@ cd axclick && ./build.sh install</code></pre>
 </div>
 
 <script>
+// Links to a question (like #first-launch) open its answer.
+function openFromHash() {
+  var d = location.hash && document.getElementById(location.hash.slice(1));
+  if (d && d.tagName === 'DETAILS') d.open = true;
+}
+window.addEventListener('hashchange', openFromHash);
+openFromHash();
+
 document.querySelectorAll('button.copy').forEach(function (b) {
   b.addEventListener('click', function () {
     var text = document.getElementById(b.dataset.copy).textContent;
