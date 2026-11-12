@@ -108,6 +108,12 @@ button.copy {
   padding: 9px 12px; border-radius: 9px; cursor: pointer; flex: none;
 }
 .hero .copybox { flex: 0 1 auto; }
+.copybox.main { background: var(--fg); border-color: var(--fg); padding: 10px 10px 10px 20px; box-shadow: 0 16px 36px -10px rgba(0, 0, 0, .4); }
+.copybox.main code { color: var(--bg); font-size: 15px; }
+.copybox.main .prompt { color: var(--bg); opacity: .5; }
+.copybox.main button.copy { background: var(--hint); color: var(--hint-fg); padding: 11px 16px; font-size: 14px; }
+.hero .alt { margin-top: 14px; }
+.hero .alt .btn { padding: 10px 18px; font-size: 15px; }
 .meta { color: var(--faint); font-size: 14px; margin-top: 16px; }
 
 /* Demo */
@@ -182,15 +188,14 @@ td:first-child { white-space: nowrap; width: 1%; }
 .note { text-align: center; color: var(--faint); font-size: 14px; margin-top: 18px; }
 
 /* Get */
-.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.plans { max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
 .plan { display: flex; flex-direction: column; gap: 14px; }
 .plan.best { border-color: var(--hint); box-shadow: 0 0 0 3px rgba(255, 212, 59, .35); }
 .plan h3 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
 .plan .line { color: var(--muted); font-size: 15.5px; margin: 0; flex: 1; }
 .plan .cta { justify-content: flex-start; }
 .plan .btn { padding: 11px 18px; font-size: 15px; }
-.plan .copybox { align-items: flex-start; }
-.plan .copybox code { font-size: 12.5px; white-space: pre-wrap; overflow-wrap: anywhere; padding-top: 5px; }
+.plan .copybox code { font-size: 13.5px; }
 .plan .small { font-size: 13.5px; color: var(--faint); margin: 0; }
 
 /* Install */
@@ -264,13 +269,14 @@ footer a { color: var(--muted); }
       <h1>Click anything on your Mac <br>with the keyboard.</h1>
       <p class="lede">Press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Space</kbd>, type the label, done. A free, open-source Homerow alternative.</p>
       <div class="cta">
-        <div class="copybox">
+        <div class="copybox main">
           <code><span class="prompt">$ </span><span id="oneliner-top">curl -fsSL https://5uvarna.github.io/axclick/install.sh | bash</span></code>
           <button class="copy" data-copy="oneliner-top">Copy</button>
         </div>
-        <a class="btn primary" href="https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip">Download for Mac</a>
       </div>
-      <p class="meta">Paste into Terminal to install · macOS 13 or later · Apple silicon and Intel · The app has no tracking</p>
+      <p class="meta">Paste into Terminal and press Return. It installs and opens axclick.</p>
+      <div class="cta alt"><a class="btn" href="https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip">or Download for Mac</a></div>
+      <p class="meta">macOS 13 or later · Apple silicon and Intel · The app has no tracking</p>
     </div>
 
     <div class="demo">
@@ -293,7 +299,7 @@ footer a { color: var(--muted); }
             <span class="chip"><span class="lb"><span class="ty">S</span>D</span>Save</span><span class="chip"><span class="lb">AF</span>Share</span>
             <span class="chip"><span class="lb">AJ</span>Wi-Fi</span><span class="chip"><span class="lb">AK</span>Sound</span>
           </div></div>
-          <div><h3>Home-row labels</h3><p>Two keys reach any button, link or menu.</p></div>
+          <div><h3>Click by label</h3><p>Every button, link and menu gets a two-letter label.</p></div>
         </div>
         <div class="card feature">
           <div class="viz"><div class="v-search">
@@ -368,8 +374,8 @@ footer a { color: var(--muted); }
 
     <section id="get">
       <p class="eyebrow">Get axclick</p>
-      <h2>Free, three ways.</h2>
-      <p class="sub">Every feature is free in all of them.</p>
+      <h2>Free, two ways.</h2>
+      <p class="sub">Every feature is free in both.</p>
       <div class="plans">
         <div class="card plan best">
           <h3>Download <span class="badge">Easiest</span></h3>
@@ -385,11 +391,6 @@ footer a { color: var(--muted); }
           <p class="line">Builds from source. No reminder. Needs the Command Line Tools.</p>
           <div class="copybox"><code id="brew">brew install 5uvarna/tap/axclick</code><button class="copy" data-copy="brew">Copy</button></div>
         </div>
-        <div class="card plan">
-          <h3>Build it yourself</h3>
-          <p class="line">Full source, GPL v3. No reminder. Change anything.</p>
-          <div class="copybox"><code id="src">git clone https://github.com/5uvarna/axclick.git &amp;&amp; cd axclick &amp;&amp; ./build.sh install</code><button class="copy" data-copy="src">Copy</button></div>
-        </div>
       </div>
     </section>
 
@@ -398,7 +399,7 @@ footer a { color: var(--muted); }
       <h2>One command. No warnings.</h2>
       <p class="sub">Paste it into Terminal and press Return.</p>
       <div class="oneline">
-        <div class="copybox">
+        <div class="copybox main">
           <code><span class="prompt">$ </span><span id="oneliner">curl -fsSL https://5uvarna.github.io/axclick/install.sh | bash</span></code>
           <button class="copy" data-copy="oneliner">Copy</button>
         </div>
@@ -425,7 +426,7 @@ footer a { color: var(--muted); }
         <details id="malware"><summary>Why does macOS warn me about the download?</summary><p>Apple charges developers $99 a year to notarize apps, which is what removes that warning. axclick is a hobby project, so it isn't notarized yet. If it makes $99, notarization is the first thing I'll pay for. Until then, the app is signed, its full source is on GitHub, and <a href="#install">the one-line installer</a> skips the warning entirely.</p></details>
         <details><summary>Why does it need Accessibility access?</summary><p>That's how macOS lets an app see and press buttons in other apps. axclick only reads the app in front, only while labels show, and never sends what you do anywhere. The only network request, in the download, is checking a license key with Gumroad once.</p></details>
         <details><summary>Which apps does it work with?</summary><p>Most apps: Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings, dialogs and menu bar icons. For apps that draw their own UI, like some games, grid mode clicks anywhere.</p></details>
-        <details><summary>Is it really free?</summary><p>Yes, every feature, with no time limit. Homebrew and source builds never remind you. The download shows a small reminder every 100 uses, at most once a week, and never steals focus. A $9.99 one-time license removes it.</p></details>
+        <details><summary>Is it really free?</summary><p>Yes, every feature, with no time limit. The Homebrew version never reminds you. The download shows a small reminder every 100 uses, at most once a week, and never steals focus. A $9.99 one-time license removes it.</p></details>
         <details><summary>How many Macs can I use a license on?</summary><p>You can activate a license up to 10 times, across all your Macs. If you run out, reply to your Gumroad receipt and we'll sort it out.</p></details>
         <details><summary>Can I change the shortcuts?</summary><p>Yes. Click the axe in the menu bar, choose Settings…, and record new ones. You can turn on launch at login there too.</p></details>
         <details><summary>What if I don't know the label?</summary><p>Press <kbd>/</kbd> in click mode and type the text on the button instead, like “save”. <kbd>Tab</kbd> moves to the next match.</p></details>
