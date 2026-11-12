@@ -10,7 +10,7 @@ import Security
 enum License {
     /// Set this to the product ID from Gumroad (product settings → the "product_id" for the
     /// license API) before the first official build.
-    static let gumroadProductID = ""
+    static let gumroadProductID = "NjQ_KnwCuIMv7sQB_bDEww=="
     /// The product page where people buy a license.
     static let buyURL = URL(string: "https://5uvarna.github.io/axclick/#get")!
     /// Each check counts one use on Gumroad, so this caps how many Macs one key unlocks.
