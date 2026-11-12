@@ -424,6 +424,7 @@ footer a { color: var(--muted); }
       <p class="eyebrow">FAQ</p>
       <h2>Questions</h2>
       <div class="faq">
+        <details id="why"><summary>Why did you build axclick?</summary><p>For myself. I wanted to click around my Mac without reaching for the trackpad, but the apps that did it well cost more than I wanted to pay. So I built a free one, made it open source, and kept every feature free. A small optional license helps cover the cost of keeping it going.</p></details>
         <details id="malware"><summary>Why does macOS warn me about the download?</summary><p>Apple charges developers $99 a year to notarize apps, which is what removes that warning. axclick is a hobby project, so it isn't notarized yet. If it makes $99, notarization is the first thing I'll pay for. Until then, the app is signed, its full source is on GitHub, and <a href="#install">the one-line installer</a> skips the warning entirely.</p></details>
         <details><summary>Why does it need Accessibility access?</summary><p>That's how macOS lets an app see and press buttons in other apps. axclick only reads the app in front, only while labels show, and never sends what you do anywhere. The only network request, in the download, is checking a license key with Gumroad once.</p></details>
         <details><summary>Which apps does it work with?</summary><p>Most apps: Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings, dialogs and menu bar icons. For apps that draw their own UI, like some games, grid mode clicks anywhere.</p></details>
