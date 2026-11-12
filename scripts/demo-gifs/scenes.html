@@ -1,0 +1,374 @@
+<!doctype html>
+<!-- Animated scenes for the website's demo GIFs. render.py opens this with ?scene=click|search|grid|zip,
+     calls render(t) for each frame and screenshots #screen. Styles copy the real overlay in app/Hints.swift. -->
+<html><head><meta charset="utf-8">
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font: 13px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; color: #1d1d1f; }
+#screen { position: relative; width: 960px; height: 600px; overflow: hidden;
+  background: radial-gradient(120% 90% at 20% 10%, #f6d98a 0%, #e9a76b 38%, #b0688e 70%, #4f4a8f 100%); }
+.menubar { position: absolute; inset: 0 0 auto 0; height: 26px; background: rgba(255,255,255,.55); backdrop-filter: blur(20px);
+  display: flex; align-items: center; padding: 0 12px; gap: 18px; font-size: 13px; z-index: 5; }
+.menubar b { font-weight: 700; }
+.menubar .right { margin-left: auto; display: flex; gap: 14px; align-items: center; }
+.mi { position: relative; display: inline-flex; align-items: center; height: 20px; padding: 0 3px; border-radius: 4px; }
+.mi svg { width: 16px; height: 16px; }
+.win { position: absolute; background: #fff; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 22px 60px rgba(0,0,0,.35); }
+.tb { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; background: #f4f3f1; border-bottom: 1px solid #e3e1dd; }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; display: block; }
+.lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.tb .ttl { font-weight: 600; color: #4a4a4f; margin-left: 10px; }
+.btn { position: relative; display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 7px; background: #efeee9; color: #1d1d1f; white-space: nowrap; }
+.btn.blue { background: #0a84ff; color: #fff; }
+.btn.press { background: #0a84ff; color: #fff; transform: scale(.95); }
+.bar { height: 9px; border-radius: 5px; background: #ecebe6; }
+/* overlay, copied from OverlayView */
+#ov { position: absolute; inset: 0; pointer-events: none; z-index: 50; }
+.lab { position: absolute; font: 700 12px/1 ui-monospace, "SF Mono", Menlo, monospace; color: #000; padding: 3px 4px 2px;
+  border-radius: 4px; background: rgba(255,217,64,.95); box-shadow: 0 0 0 1px rgba(0,0,0,.45); }
+.lab .typed { color: rgba(0,0,0,.35); }
+.lab.sel { background: #0a84ff; color: #fff; }
+.lab.big { font-size: 22px; padding: 5px 8px 4px; background: rgba(255,217,64,.35); color: rgba(0,0,0,.75); box-shadow: 0 0 0 1px rgba(0,0,0,.2); transform: translate(-50%,-50%); }
+.tint { position: absolute; inset: 0; background: rgba(0,0,0,.12); }
+.cell { position: absolute; box-shadow: inset 0 0 0 1px rgba(255,255,255,.55), 0 0 0 1px rgba(0,0,0,.18); }
+.region { position: absolute; border: 2px solid rgba(10,132,255,.9); border-radius: 6px; }
+.dot { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: rgba(255,59,48,.9); box-shadow: 0 0 0 2px #fff; }
+.ripple { position: absolute; border-radius: 50%; border: 3px solid rgba(255,59,48,.8); }
+.banner { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff;
+  font-size: 15px; font-weight: 500; padding: 8px 14px; border-radius: 10px; white-space: pre; }
+/* keys pressed, shown for the viewer */
+#keys { position: absolute; right: 18px; bottom: 18px; display: flex; gap: 6px; z-index: 60; transition: none; }
+#keys kbd { font: 600 17px/1 -apple-system, sans-serif; color: #1d1d1f; background: #fff; border-radius: 8px; padding: 9px 12px;
+  box-shadow: 0 2px 0 #c9c7c1, 0 8px 20px rgba(0,0,0,.25); min-width: 38px; text-align: center; }
+#cursor { position: absolute; width: 22px; height: 30px; z-index: 70; margin: -2px 0 0 -3px; }
+#caption { position: absolute; top: 42px; left: 50%; transform: translateX(-50%); z-index: 65; background: #1d1d1f; color: #fff;
+  font-size: 17px; font-weight: 600; padding: 10px 18px 10px 12px; border-radius: 999px; display: flex; gap: 10px; align-items: center; white-space: nowrap;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+#caption .n { width: 26px; height: 26px; border-radius: 50%; background: #ffd43b; color: #1d1d1f; display: grid; place-items: center; font-size: 15px; }
+.hidden { display: none !important; }
+/* dialogs */
+.alert { position: absolute; width: 272px; background: rgba(246,245,243,.98); border-radius: 14px; padding: 20px 18px 16px; text-align: center;
+  box-shadow: 0 0 0 .5px rgba(0,0,0,.25), 0 30px 70px rgba(0,0,0,.4); z-index: 40; }
+.alert img { width: 64px; height: 64px; }
+.alert h4 { margin: 8px 0 6px; font-size: 13px; }
+.alert p { margin: 0 0 14px; font-size: 11px; color: #3c3c43; }
+.alert .row { display: flex; gap: 8px; }
+.alert .btn { flex: 1; justify-content: center; height: 26px; font-size: 13px; background: #e3e2de; }
+.alert .btn.blue { background: #0a84ff; }
+.alert .col { display: grid; gap: 7px; }
+.alert .col .btn { width: 100%; }
+.field { height: 26px; border-radius: 6px; border: 1px solid #cfcdc8; background: #fff; text-align: left; padding: 4px 8px; font-size: 13px; margin-bottom: 8px; color: #1d1d1f; }
+.field.ph { color: #a1a1a6; }
+</style></head>
+<body><div id="screen">
+  <div class="menubar">
+    <b id="appname">Pages</b><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span>
+    <div class="right">
+      <span class="mi" id="m-axe"><img src="../../docs/logo.svg" style="width:16px;height:16px"></span>
+      <span class="mi t" id="m-bt"><svg viewBox="0 0 16 16"><path d="M4.5 4.5l7 7-3.5 3V1.5l3.5 3-7 7" fill="none" stroke="#1d1d1f" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
+      <span class="mi t" id="m-wifi"><svg viewBox="0 0 16 16"><path d="M1.5 6a9.5 9.5 0 0 1 13 0M3.8 8.6a6.2 6.2 0 0 1 8.4 0M6 11.1a3 3 0 0 1 4 0" fill="none" stroke="#1d1d1f" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="13.4" r="1.1" fill="#1d1d1f"/></svg></span>
+      <span class="mi t" id="m-snd"><svg viewBox="0 0 16 16"><path d="M2 6h3l4-3v10L5 10H2z" fill="#1d1d1f"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.6a6 6 0 0 1 0 8.8" fill="none" stroke="#1d1d1f" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+      <span class="mi t" id="m-bat"><svg viewBox="0 0 22 16" style="width:22px"><rect x="1" y="4" width="17" height="8" rx="2.4" fill="none" stroke="#1d1d1f" stroke-width="1.1"/><rect x="2.6" y="5.6" width="11" height="4.8" rx="1.2" fill="#1d1d1f"/><rect x="19" y="6.5" width="1.6" height="3" rx=".8" fill="#1d1d1f"/></svg></span>
+      <span>Fri 9:41</span>
+    </div>
+  </div>
+  <div id="scene"></div>
+  <div id="ov"></div>
+  <div id="keys"></div>
+  <div id="caption" class="hidden"><span class="n"></span><span class="tx"></span></div>
+  <svg id="cursor" class="hidden" viewBox="0 0 22 30"><path d="M3 2 L3 24 L8.6 18.8 L12.4 27.4 L16 25.8 L12.3 17.4 L19.6 17.2 Z" fill="#000" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
+</div>
+<script>
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const scr = $('#screen'), ov = $('#ov');
+const params = new URLSearchParams(location.search);
+function rect(el) { const a = el.getBoundingClientRect(), b = scr.getBoundingClientRect(); return { x: a.left - b.left, y: a.top - b.top, w: a.width, h: a.height }; }
+function div(cls, css, html) { const d = document.createElement('div'); d.className = cls; Object.assign(d.style, css || {}); if (html != null) d.innerHTML = html; ov.appendChild(d); return d; }
+// A label at the element's left edge, vertically centred, like Controller.render() places it.
+function label(el, text, o = {}) {
+  const r = rect(el), typed = o.typed || '';
+  const d = div('lab' + (o.sel ? ' sel' : ''), {}, '<span class="typed">' + text.slice(0, typed.length) + '</span>' + text.slice(typed.length));
+  d.style.left = (r.x - 12) + 'px'; d.style.top = (r.y + r.h / 2 - 8.5) + 'px';
+}
+function banner(text) { div('banner', {}, text); }
+function keys(k) { $('#keys').innerHTML = k ? '<kbd>' + k + '</kbd>' : ''; }
+function caption(n, text) { const c = $('#caption'); if (!text) { c.classList.add('hidden'); return; } c.classList.remove('hidden'); c.querySelector('.n').innerHTML = n; c.querySelector('.tx').textContent = text; }
+const ease = x => x < 0 ? 0 : x > 1 ? 1 : x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+// Cursor path: [[time, x, y], ...]; moves between points with easing.
+function cursorAt(t, path) {
+  const c = $('#cursor'); c.classList.remove('hidden');
+  let p = path[0];
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1], b = path[i];
+    if (t >= b[0]) { p = b; continue; }
+    if (t > a[0]) { const k = ease((t - a[0]) / (b[0] - a[0])); p = [t, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+    break;
+  }
+  c.style.left = p[1] + 'px'; c.style.top = p[2] + 'px';
+}
+function center(el) { const r = rect(el); return [r.x + r.w / 2, r.y + r.h / 2]; }
+// Keys shown from `at` for `dur` seconds.
+function showKeys(t, list) { let cur = null; for (const [at, k, dur] of list) if (t >= at && t < at + (dur || 1.1)) cur = k; keys(cur); }
+
+const scenes = {};
+
+/* ---------------- Click mode ---------------- */
+scenes.click = {
+  dur: 5.6,
+  setup() {
+    $('#scene').innerHTML = `
+    <div class="win" style="left:110px;top:70px;width:740px;height:430px">
+      <div class="tb"><span class="lights"><i></i><i></i><i></i></span><span class="ttl" id="ttl">Draft — Edited</span></div>
+      <div style="display:grid;grid-template-columns:170px 1fr;height:392px">
+        <div style="background:#f7f6f3;border-right:1px solid #e3e1dd;padding:14px 10px;display:grid;gap:6px;align-content:start">
+          <span class="btn" id="s1" style="background:#e6e4df">All documents</span><span class="btn" id="s2" style="background:none;color:#6e6e73">Recents</span>
+          <span class="btn" id="s3" style="background:none;color:#6e6e73">Shared</span><span class="btn" id="s4" style="background:none;color:#6e6e73">Trash</span>
+        </div>
+        <div style="padding:16px 20px;display:grid;gap:16px;align-content:start">
+          <div style="display:flex;gap:10px"><span class="btn" id="b-new">New</span><span class="btn" id="b-open">Open…</span><span class="btn" id="b-save">Save</span><span class="btn" id="b-share">Share</span><span class="btn" id="b-search" style="flex:1;color:#a1a1a6">Search</span></div>
+          <div style="display:grid;gap:11px;padding:6px 0"><div class="bar" style="width:62%"></div><div class="bar" style="width:90%"></div><div class="bar" style="width:76%"></div><div class="bar" style="width:84%"></div><div class="bar" style="width:48%"></div><div class="bar" style="width:70%"></div></div>
+          <div style="display:flex;gap:10px"><span class="btn" id="b-fmt">Format</span><span class="btn" id="b-del">Delete</span><span class="btn" id="b-set">Settings</span></div>
+          <div id="saved" class="hidden" style="justify-self:start;background:#e8f7ec;color:#1f7a3a;font-weight:600;padding:6px 12px;border-radius:999px">✓ Saved</div>
+        </div>
+      </div>
+    </div>`;
+    this.labels = [['#s1','AG'],['#s2','AH'],['#s3','AQ'],['#s4','AW'],['#b-new','AS'],['#b-open','AD'],['#b-save','SD'],['#b-share','AJ'],['#b-search','AF'],
+      ['#b-fmt','AK'],['#b-del','AL'],['#b-set','SA'],['#m-bt','SF'],['#m-wifi','SJ'],['#m-snd','SK'],['#m-bat','SL'],['#m-axe','AE']];
+  },
+  render(t) {
+    ov.innerHTML = '';
+    const save = $('#b-save'); save.classList.toggle('press', t >= 2.3 && t < 2.6);
+    $('#ttl').textContent = t >= 2.6 ? 'Draft' : 'Draft — Edited';
+    $('#saved').classList.toggle('hidden', !(t >= 2.6));
+    if (t >= 0.7 && t < 2.3) {
+      const typed = t >= 1.6 ? 'S' : '';
+      for (const [s, l] of this.labels) if (l.startsWith(typed)) label($(s), l, { typed });
+    }
+    showKeys(t, [[0.7, '⌘</kbd><kbd>⇧</kbd><kbd>Space', 0.85], [1.6, 'S', 0.7], [2.3, 'D', 1.0]]);
+  }
+};
+
+/* ---------------- Search ---------------- */
+scenes.search = {
+  dur: 7.4,
+  setup() {
+    $('#appname').textContent = 'Safari';
+    $('#scene').innerHTML = `
+    <div class="win" style="left:90px;top:62px;width:780px;height:460px">
+      <div class="tb" style="gap:14px"><span class="lights"><i></i><i></i><i></i></span>
+        <span style="color:#8e8e93;font-size:15px">‹ ›</span>
+        <span style="flex:1;max-width:380px;margin:0 auto;background:#e7e6e2;border-radius:8px;height:26px;display:grid;place-items:center;color:#4a4a4f">lumen.example</span></div>
+      <div style="padding:16px 26px;position:relative;height:422px">
+        <div style="display:flex;align-items:center;gap:22px">
+          <b style="font-size:17px">◐ Lumen</b>
+          <span class="mi" id="l-prod">Product</span><span class="mi" id="l-design">Design</span><span class="mi" id="l-price">Pricing</span><span class="mi" id="l-docs">Docs</span>
+          <span style="margin-left:auto" class="mi" id="l-in">Sign in</span><span class="btn blue" id="l-up">Sign up</span>
+        </div>
+        <div style="text-align:center;padding:52px 0 26px">
+          <div style="font-size:34px;font-weight:800;letter-spacing:-.02em">Plan your week in minutes.</div>
+          <div style="color:#6e6e73;margin:10px 0 22px;font-size:15px">Calendars, tasks and notes in one calm place.</div>
+          <span class="btn blue" id="l-start" style="height:34px;padding:0 18px">Get started</span> <span class="btn" id="l-demo" style="height:34px;padding:0 18px">Watch the demo</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          ${[1,2,3].map(i => '<div style="background:#f6f5f2;border-radius:10px;padding:14px;display:grid;gap:8px"><div class="bar" style="width:50%;background:#dddbd5"></div><div class="bar"></div><div class="bar" style="width:80%"></div></div>').join('')}
+        </div>
+        <div id="modal" class="hidden" style="position:absolute;inset:0;background:rgba(0,0,0,.25);display:grid;place-items:center">
+          <div style="background:#fff;border-radius:14px;padding:24px 26px;width:300px;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+            <div style="font-size:19px;font-weight:700;margin-bottom:14px">Create your account</div>
+            <div class="field ph">Email</div><div class="field ph">Password</div>
+            <span class="btn blue" style="width:100%;justify-content:center;margin-top:4px">Continue</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    this.items = [['#l-prod','AS','Product'],['#l-design','AD','Design'],['#l-price','AF','Pricing'],['#l-docs','AG','Docs'],['#l-in','AH','Sign in'],
+      ['#l-up','AJ','Sign up'],['#l-start','AK','Get started'],['#l-demo','AL','Watch the demo'],['#m-wifi','SA','Wi-Fi'],['#m-bt','SD','Bluetooth'],['#m-snd','SF','Sound']];
+  },
+  render(t) {
+    ov.innerHTML = '';
+    const q = t < 1.9 ? '' : t < 2.2 ? 's' : t < 2.45 ? 'si' : t < 2.7 ? 'sig' : 'sign';
+    const up = $('#l-up'); up.classList.toggle('press', t >= 4.4 && t < 4.7);
+    $('#modal').classList.toggle('hidden', !(t >= 4.7));
+    if (t >= 0.6 && t < 1.4) for (const [s, l] of this.items) label($(s), l);
+    if (t >= 1.4 && t < 4.4) {
+      // Text that starts with the query ranks before text that only contains it.
+      let m = this.items.filter(i => q && i[2].toLowerCase().includes(q));
+      m.sort((a, b) => (b[2].toLowerCase().startsWith(q) ? 1 : 0) - (a[2].toLowerCase().startsWith(q) ? 1 : 0));
+      const sel = t >= 3.4 ? 1 : 0;
+      m.forEach((i, n) => label($(i[0]), i[1], { sel: n === sel }));
+      const count = !q ? '' : m.length === 1 ? '1 match' : m.length + ' matches';
+      banner('Search: ' + q + '▏  ' + count + '   ↩ click  ⇥ next  ⌫ back');
+    }
+    showKeys(t, [[0.6, '⌘</kbd><kbd>⇧</kbd><kbd>Space', 0.8], [1.4, '/', 0.5], [1.9, 's', .3], [2.2, 'i', .25], [2.45, 'g', .25], [2.7, 'n', .6], [3.4, '⇥ Tab', .8], [4.4, '↩ Return', 1.0]]);
+  }
+};
+
+/* ---------------- Grid ---------------- */
+const GRID = [['Q','W','E','R'],['A','S','D','F'],['Z','X','C','V']];
+function split(r) { const out = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 4; j++) out.push({ l: GRID[i][j], x: r.x + j * r.w / 4, y: r.y + i * r.h / 3, w: r.w / 4, h: r.h / 3 }); return out; }
+function pick(r, l) { return split(r).find(c => c.l === l); }
+function drawGrid(r) {
+  div('tint');
+  for (const c of split(r)) {
+    div('cell', { left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', height: c.h + 'px' });
+    const d = div('lab big', { left: (c.x + c.w / 2) + 'px', top: (c.y + c.h / 2) + 'px' }, c.l);
+    if (c.w < 70) d.style.fontSize = '15px';
+    if (c.w < 30) Object.assign(d.style, { fontSize: '9px', padding: '1px 2px' });
+  }
+  div('region', { left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px' });
+  div('dot', { left: (r.x + r.w / 2) + 'px', top: (r.y + r.h / 2) + 'px' });
+  banner('Pick a cell to zoom in   ↩ click the dot   ⌫ back   esc cancel');
+}
+scenes.grid = {
+  dur: 7.6, path: ['D', 'W', 'F'],
+  setup() {
+    $('#appname').textContent = 'Canvas';
+    const r0 = { x: 0, y: 0, w: 960, h: 600 }, r1 = pick(r0, 'D'), r2 = pick(r1, 'W'), c3 = pick(r2, 'F');
+    this.regions = [r0, r1, r2]; this.target = [c3.x + c3.w / 2, c3.y + c3.h / 2];
+    const [tx, ty] = this.target;
+    $('#scene').innerHTML = `
+    <div class="win" style="left:60px;top:46px;width:840px;height:500px">
+      <div class="tb"><span class="lights"><i></i><i></i><i></i></span><span class="ttl">Roadmap board</span>
+        <span style="margin-left:auto;display:flex;gap:8px"><span class="btn" id="g-pen">Pen</span><span class="btn" id="g-shape">Shapes</span><span class="btn" id="g-share">Share</span></span></div>
+      <div style="position:relative;height:462px;background-color:#fbfaf7;background-image:radial-gradient(#d8d5ce 1px,transparent 1px);background-size:18px 18px"></div>
+    </div>
+    <svg style="position:absolute;inset:0;width:960px;height:600px" viewBox="0 0 960 600">
+      <path d="M260 210 C 380 210, 400 320, ${tx - 70} ${ty + 40}" fill="none" stroke="#9aa3b5" stroke-width="2"/>
+      <path d="M300 420 C 420 440, 560 420, 650 380" fill="none" stroke="#9aa3b5" stroke-width="2"/>
+      <rect x="140" y="170" width="150" height="74" rx="12" fill="#fff3c4" stroke="#e6c65c"/><text x="160" y="212" font-size="14" style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-weight:500" fill="#5c4a12">Research</text>
+      <rect x="170" y="390" width="150" height="74" rx="12" fill="#dcebff" stroke="#8fb5ec"/><text x="190" y="432" font-size="14" style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-weight:500" fill="#1f3f6e">Prototype</text>
+      <rect x="640" y="340" width="150" height="74" rx="12" fill="#e5f6e8" stroke="#8ccc98"/><text x="660" y="382" font-size="14" style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-weight:500" fill="#1f5a2c">Launch</text>
+      <g id="node"><rect x="${tx - 130}" y="${ty - 4}" width="126" height="64" rx="12" fill="#f4e6ff" stroke="#c39be6"/><text x="${tx - 112}" y="${ty + 33}" font-size="14" style="font-family:Helvetica Neue,Helvetica,Arial,sans-serif;font-weight:500" fill="#4b2a6b">Beta invite</text></g>
+      <rect id="sel" x="${tx - 134}" y="${ty - 8}" width="134" height="72" rx="14" fill="none" stroke="#0a84ff" stroke-width="2.5" stroke-dasharray="0"/>
+      <circle id="handle" cx="${tx}" cy="${ty}" r="5" fill="#fff" stroke="#c39be6" stroke-width="2"/>
+    </svg>
+    <div id="pop" style="position:absolute;left:${tx + 14}px;top:${ty - 16}px;background:#1d1d1f;color:#fff;padding:7px 11px;border-radius:8px;font-size:12px;font-weight:600">Drag to connect</div>`;
+  },
+  render(t) {
+    ov.innerHTML = '';
+    const clicked = t >= 4.3;
+    $('#sel').style.display = clicked ? '' : 'none';
+    $('#pop').style.display = clicked ? '' : 'none';
+    $('#handle').setAttribute('fill', clicked ? '#0a84ff' : '#fff');
+    if (t >= 0.6 && t < 1.5) [['#g-pen','AS'],['#g-shape','AD'],['#g-share','AF'],['#m-wifi','SA'],['#m-bt','SD'],['#m-snd','SF']].forEach(([s, l]) => label($(s), l));
+    const n = t < 1.5 ? -1 : t < 2.5 ? 0 : t < 3.4 ? 1 : t < 4.3 ? 2 : -1;
+    if (n >= 0) drawGrid(this.regions[n]);
+    if (t >= 4.3 && t < 5.0) {
+      const k = (t - 4.3) / 0.7, R = 6 + 26 * k, [x, y] = this.target;
+      div('ripple', { left: (x - R) + 'px', top: (y - R) + 'px', width: 2 * R + 'px', height: 2 * R + 'px', opacity: 1 - k });
+      div('dot', { left: x + 'px', top: y + 'px', opacity: 1 - k });
+    }
+    showKeys(t, [[0.6, '⌘</kbd><kbd>⇧</kbd><kbd>Space', .85], [1.5, 'Space', .9], [2.5, 'D', .85], [3.4, 'W', .85], [4.3, 'F', 1.1]]);
+  }
+};
+
+/* ---------------- Opening the zip download ---------------- */
+scenes.zip = {
+  dur: 15.5,
+  setup() {
+    $('#appname').textContent = 'Finder';
+    $('#m-axe').style.visibility = 'hidden';
+    const side = ['General','Appearance','Accessibility','Control Center','Desktop & Dock','Displays','Notifications','Sound','Focus','Privacy & Security','Lock Screen','Touch ID & Password','Users & Groups'];
+    $('#scene').innerHTML = `
+    <div class="win" id="finder" style="left:70px;top:70px;width:520px;height:300px">
+      <div class="tb"><span class="lights"><i></i><i></i><i></i></span><span class="ttl">Downloads</span></div>
+      <div style="display:flex;gap:34px;padding:30px 34px">
+        <div id="appicon" style="display:grid;justify-items:center;gap:6px;width:96px;padding:6px;border-radius:8px"><img src="../../docs/logo.svg" style="width:64px;height:64px"><span id="appname2" style="padding:1px 6px;border-radius:4px">axclick</span></div>
+        <div style="display:grid;justify-items:center;gap:6px;width:110px;padding:6px"><div style="width:50px;height:64px;background:#fff;border:1px solid #d2d0cb;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.1);display:grid;gap:5px;padding:12px 8px;align-content:start"><div class="bar" style="height:4px"></div><div class="bar" style="height:4px"></div><div class="bar" style="height:4px;width:70%"></div></div><span style="text-align:center;font-size:12px">How to open axclick.txt</span></div>
+      </div>
+    </div>
+    <div class="alert hidden" id="a1" style="left:344px;top:150px">
+      <img src="../../docs/logo.svg"><h4>“axclick” Not Opened</h4>
+      <p>Apple could not verify “axclick” is free of malware that may harm your Mac or compromise your privacy.</p>
+      <div class="row"><span class="btn" id="a1-done">Done</span><span class="btn blue">Move to Trash</span></div>
+    </div>
+    <div class="win hidden" id="settings" style="left:200px;top:52px;width:640px;height:470px">
+      <div style="display:grid;grid-template-columns:200px 1fr;height:100%">
+        <div style="background:#eceae6;padding:14px 10px;display:grid;gap:1px;align-content:start;border-right:1px solid #dcdad5">
+          <span class="lights" style="margin:0 0 14px 4px"><i></i><i></i><i></i></span>
+          <div class="field ph" style="height:24px;padding:3px 8px;font-size:12px">⌕ Search</div>
+          ${side.map((s, i) => `<span id="side${i}" style="padding:4px 8px;border-radius:6px;font-size:12.5px">${s}</span>`).join('')}
+        </div>
+        <div style="overflow:hidden;position:relative">
+          <div class="tb" style="background:#f8f7f5;font-weight:700;font-size:14px" id="ptitle">General</div>
+          <div id="pane" style="position:absolute;top:38px;left:0;right:0;padding:16px 22px;display:grid;gap:12px">
+            <div class="grp" id="gen">${['About','Software Update','Storage','AirDrop & Handoff','Login Items'].map(x => `<div style="padding:8px 12px;border-bottom:1px solid #ecebe8">${x}</div>`).join('')}</div>
+            <div id="priv" class="hidden" style="display:grid;gap:12px">
+              <div style="background:#fff;border-radius:10px;box-shadow:0 0 0 1px #e6e4e0">${['Location Services','Contacts','Calendars','Photos','Accessibility','Input Monitoring','Full Disk Access','Screen & System Audio Recording'].map(x => `<div style="padding:9px 12px;border-bottom:1px solid #f0efec">${x}</div>`).join('')}</div>
+              <div style="font-weight:700;font-size:14px;margin-top:6px">Security</div>
+              <div style="background:#fff;border-radius:10px;box-shadow:0 0 0 1px #e6e4e0;padding:12px">
+                <div style="margin-bottom:10px">Allow applications from <b style="float:right;color:#6e6e73;font-weight:500">App Store &amp; Known Developers ⌃</b></div>
+                <div style="display:flex;align-items:center;gap:10px;border-top:1px solid #f0efec;padding-top:10px"><span style="flex:1">“axclick” was blocked to protect your Mac.</span><span class="btn" id="anyway">Open Anyway</span></div>
+              </div>
+              <div style="background:#fff;border-radius:10px;box-shadow:0 0 0 1px #e6e4e0">${['FileVault','Lockdown Mode','Extensions'].map(x => `<div style="padding:9px 12px;border-bottom:1px solid #f0efec">${x}</div>`).join('')}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="alert hidden" id="a2" style="left:344px;top:140px">
+      <img src="../../docs/logo.svg"><h4>Open “axclick”?</h4>
+      <p>Apple is not able to verify that “axclick” is free of malware. Open it only if you trust where it came from.</p>
+      <div class="col"><span class="btn" id="a2-open">Open Anyway</span><span class="btn">Move to Trash</span><span class="btn blue">Done</span></div>
+    </div>
+    <div class="alert hidden" id="a3" style="left:344px;top:150px">
+      <div style="font-size:40px;line-height:1">🔒</div><h4>Privacy &amp; Security</h4>
+      <p>You're making changes to security settings. Enter your password to allow this.</p>
+      <div class="field" id="pw" style="color:#1d1d1f"></div>
+      <div class="row"><span class="btn">Cancel</span><span class="btn blue" id="a3-ok">OK</span></div>
+    </div>
+    <div id="done" class="hidden" style="position:absolute;right:16px;top:100px;background:#fff;border-radius:12px;padding:12px 14px;width:280px;box-shadow:0 14px 40px rgba(0,0,0,.3);z-index:30">
+      <b>axclick is running</b><div style="color:#6e6e73;font-size:12px;margin-top:3px">Press ⌘⇧Space in any app to start clicking.</div></div>`;
+    this.pt = id => center($(id));
+  },
+  render(t) {
+    ov.innerHTML = '';
+    const vis = (id, on) => $(id).classList.toggle('hidden', !on);
+    const sel = t >= 0.9 && t < 3.6;
+    $('#appicon').style.background = sel ? 'rgba(0,0,0,.08)' : '';
+    $('#appname2').style.cssText = sel ? 'padding:1px 6px;border-radius:4px;background:#0a84ff;color:#fff' : 'padding:1px 6px;border-radius:4px';
+    vis('#a1', t >= 1.6 && t < 3.3);
+    vis('#settings', t >= 3.6 && t < 13.0);
+    const priv = t >= 4.9;
+    $('#side9').style.cssText = 'padding:4px 8px;border-radius:6px;font-size:12.5px;' + (priv ? 'background:#0a84ff;color:#fff' : '');
+    $('#side0').style.cssText = 'padding:4px 8px;border-radius:6px;font-size:12.5px;' + (!priv ? 'background:#d8d6d1' : '');
+    $('#ptitle').textContent = priv ? 'Privacy & Security' : 'General';
+    vis('#gen', !priv); vis('#priv', priv);
+    const scroll = 300 * ease((t - 5.4) / 1.0);
+    $('#pane').style.transform = 'translateY(' + (-scroll) + 'px)';
+    $('#anyway').classList.toggle('press', t >= 7.3 && t < 7.6);
+    vis('#a2', t >= 7.8 && t < 9.4);
+    $('#a2-open').classList.toggle('press', t >= 9.1 && t < 9.4);
+    vis('#a3', t >= 9.6 && t < 12.2);
+    const dots = Math.max(0, Math.min(8, Math.floor((t - 10.0) / 0.12)));
+    $('#pw').textContent = t >= 10.0 ? '•'.repeat(dots) : '';
+    $('#a3-ok').classList.toggle('press', t >= 11.8 && t < 12.2);
+    $('#m-axe').style.visibility = t >= 12.6 ? 'visible' : 'hidden';
+    vis('#done', t >= 12.9);
+    if (t >= 12.6 && t < 13.6) { const k = (t - 12.6), r = $('#m-axe').getBoundingClientRect(), R = 8 + 22 * k; div('ripple', { left: (r.left + 11 - R) + 'px', top: (13 - R) + 'px', width: 2 * R + 'px', height: 2 * R + 'px', opacity: 1 - k, borderColor: 'rgba(255,212,59,.95)' }); }
+    if (t < 1.6) caption('▸', 'Double-click axclick');
+    else if (t < 3.5) caption('1', 'Click Done (not Move to Trash)');
+    else if (t < 5.3) caption('2', 'Open System Settings → Privacy & Security');
+    else if (t < 7.7) caption('3', 'Scroll down and click Open Anyway');
+    else if (t < 12.5) caption('4', 'Click Open Anyway, then enter your password');
+    else caption('✓', 'Done. Look for the axe in your menu bar');
+    // Positions are read from the layout while each element is visible.
+    const P = this.P || (this.P = {});
+    const at = (id, on) => { if (on && !P[id]) P[id] = this.pt(id); };
+    at('#appicon', true); at('#a1-done', t >= 1.6 && t < 3.3); at('#side9', t >= 3.6); at('#anyway', t >= 6.4 && t < 13); at('#a2-open', t >= 7.8 && t < 9.4); at('#a3-ok', t >= 9.6 && t < 12.2);
+    const g = (id, dx = 0, dy = 0) => P[id] ? [P[id][0] + dx, P[id][1] + dy] : [600, 400];
+    const path = [[0, 760, 470], [0.7, ...g('#appicon', 0, -8)], [2.2, ...g('#appicon', 0, -8)], [3.0, ...g('#a1-done')], [3.9, ...g('#a1-done')], [4.7, ...g('#side9', -30)],
+      [6.4, ...g('#side9', -30)], [7.2, ...g('#anyway')], [8.2, ...g('#anyway')], [9.0, ...g('#a2-open')], [10.9, ...g('#a2-open')], [11.7, ...g('#a3-ok')], [12.6, ...g('#a3-ok')], [13.4, 720, 300]];
+    cursorAt(t, path);
+    showKeys(t, []);
+  }
+};
+
+const scene = scenes[params.get('scene') || 'click'];
+scene.setup();
+window.SCENE_DUR = scene.dur;
+window.render = t => scene.render(t);
+render(params.has('t') ? +params.get('t') : 0);
+</script></body></html>
