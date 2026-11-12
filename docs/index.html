@@ -25,7 +25,7 @@
   "license": "https://www.gnu.org/licenses/gpl-3.0.html",
   "url": "https://5uvarna.github.io/axclick/",
   "downloadUrl": "https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip",
-  "softwareVersion": "0.3.2",
+  "softwareVersion": "0.3.3",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
 }
 </script>
@@ -177,6 +177,26 @@ td:first-child { white-space: nowrap; width: 1%; }
 .plan .cta { justify-content: flex-start; margin-top: auto; }
 .plan .meta { margin-top: 12px; }
 
+.oneline { max-width: 760px; margin: 0 auto 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; }
+.oneline .install { flex: 1; min-width: 0; }
+.oneline .install code { font-size: 14px; }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 28px; }
+.step { display: flex; flex-direction: column; gap: 14px; }
+.step .num { width: 28px; height: 28px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.step h3 { margin: 0; font-size: 16px; }
+.step p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.mock { background: var(--soft); border: 1px solid var(--line); border-radius: 14px; padding: 14px; font-size: 12.5px; min-height: 132px; display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.mock .t { font-weight: 700; font-size: 13px; }
+.mock .m { color: var(--muted); line-height: 1.35; }
+.mock .row { display: flex; gap: 8px; }
+.mock .b { flex: 1; text-align: center; padding: 6px 8px; border-radius: 8px; background: var(--el); font-weight: 600; }
+.mock .b.blue { background: #0a84ff; color: #fff; }
+.mock .hl { outline: 3px solid var(--hint); outline-offset: 2px; }
+.mock .mside { display: grid; gap: 4px; background: transparent; border: 0; padding: 0; }
+.mock .mside span { padding: 4px 8px; border-radius: 6px; color: var(--muted); }
+.mock .mside span.on { background: #0a84ff; color: #fff; }
+.mock .line { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+.mock .field { background: var(--card); border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; color: var(--faint); }
 .faq { max-width: 760px; margin: 0 auto; }
 details { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 4px 20px; margin-bottom: 10px; }
 summary { cursor: pointer; font-weight: 600; padding: 14px 0; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
@@ -230,7 +250,7 @@ footer a { color: var(--muted); }
           <button class="copy" data-copy="brew">Copy</button>
         </div>
       </div>
-      <p class="meta">macOS 13 or later · Free and open source (GPL v3) · No tracking</p>
+      <p class="meta">macOS 13 or later · Apple silicon and Intel · Free and open source (GPL v3) · No tracking<br><a href="#install">Easiest: install with one command</a></p>
     </div>
 
     <div class="demo" aria-label="Animated example: labels appear on a window and the Save button is clicked by typing SD">
@@ -326,7 +346,7 @@ footer a { color: var(--muted); }
             <a class="btn primary" href="https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip">Download</a>
             <a class="btn" href="https://ash19x.gumroad.com/l/qvpxln">Buy a license</a>
           </div>
-          <p class="meta">macOS asks you to allow each download the first time you open it. <a href="#first-launch">How</a></p>
+          <p class="meta">Tip: <a href="#install">install with one command</a> and skip macOS's "Not Opened" warning.</p>
         </div>
         <div class="card plan">
           <h3>Homebrew</h3>
@@ -344,11 +364,68 @@ cd axclick && ./build.sh install</code></pre>
       </div>
     </section>
 
+    <section id="install">
+      <p class="eyebrow">Installing</p>
+      <h2>The easy way in.</h2>
+      <p class="sub">axclick isn't notarized by Apple yet, so macOS warns about the download. One command skips that.</p>
+      <div class="oneline">
+        <div class="install">
+          <code id="oneliner">curl -fsSL https://5uvarna.github.io/axclick/install.sh | bash</code>
+          <button class="copy" data-copy="oneliner">Copy</button>
+        </div>
+      </div>
+      <p class="note">Paste it into <strong>Terminal</strong> (in Applications → Utilities) and press Return. It downloads the same app, checks its signature, moves it to Applications and opens it. Run it again any time to update. <a href="install.sh">Read the script</a></p>
+
+      <div id="first-launch">
+        <h2 style="font-size:clamp(22px,3vw,28px);margin-top:56px">Downloaded the zip instead?</h2>
+        <p class="sub">The first time you open it, macOS says “axclick” Not Opened. Here's how to get past it.</p>
+        <div class="steps">
+          <div class="card step">
+            <div class="num">1</div>
+            <div class="mock">
+              <div class="t">“axclick” Not Opened</div>
+              <div class="m">Apple could not verify “axclick” is free of malware…</div>
+              <div class="row"><span class="b hl">Done</span><span class="b blue">Move to Bin</span></div>
+            </div>
+            <h3>Click Done</h3>
+            <p>Not Move to Bin. axclick stays where it is.</p>
+          </div>
+          <div class="card step">
+            <div class="num">2</div>
+            <div class="mock">
+              <div class="mside"><span>General</span><span>Appearance</span><span class="on hl">Privacy &amp; Security</span><span>Desktop &amp; Dock</span></div>
+            </div>
+            <h3>Open Privacy &amp; Security</h3>
+            <p>Apple menu → System Settings → Privacy &amp; Security.</p>
+          </div>
+          <div class="card step">
+            <div class="num">3</div>
+            <div class="mock">
+              <div class="t">Security</div>
+              <div class="line"><span class="m">“axclick” was blocked to protect your Mac.</span><span class="b hl" style="flex:none">Open Anyway</span></div>
+            </div>
+            <h3>Click Open Anyway</h3>
+            <p>Scroll down to the Security section to find it.</p>
+          </div>
+          <div class="card step">
+            <div class="num">4</div>
+            <div class="mock">
+              <div class="t">Open “axclick”?</div>
+              <div class="field">Password</div>
+              <div class="row"><span class="b">Cancel</span><span class="b blue hl">Open</span></div>
+            </div>
+            <h3>Confirm and open</h3>
+            <p>Enter your Mac password and click Open. Downloaded updates ask again; the installer doesn't.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="faq">
       <p class="eyebrow">FAQ</p>
       <h2>Questions</h2>
       <div class="faq">
-        <details id="first-launch"><summary>macOS says it can't check axclick for malware. Is it safe?</summary><p>The download isn't notarized by Apple yet, so the first time you open it macOS blocks it. To open it: try opening axclick once, then go to <strong>System Settings → Privacy &amp; Security</strong>, scroll down, and click <strong>Open Anyway</strong> next to the message about axclick. You'll do this once for each download, including updates. Your Accessibility permission and license carry over. The full source is on GitHub, and Homebrew builds it from that source if you'd rather not use the download.</p></details>
+        <details id="malware"><summary>macOS says it can't check axclick for malware. Is it safe?</summary><p>That message appears because the download isn't notarized by Apple yet, not because anything was found. axclick is signed, and its full source is on GitHub. To skip the message, <a href="#install">install with one command</a>, or follow <a href="#first-launch">the four steps</a> to open the download. Homebrew also builds it from source if you prefer.</p></details>
         <details><summary>Why does it need Accessibility access?</summary><p>That's how macOS lets an app see the buttons and links in other apps and press them. axclick only reads the app in front, only while labels are showing. It never sends anything about what you do anywhere: the only network request, in the downloadable app, is checking your license key with Gumroad once. The source is on GitHub if you want to check.</p></details>
         <details><summary>Which apps does it work with?</summary><p>Most apps that support macOS accessibility, including Safari, Chrome, Electron apps like VS Code and Slack, Finder, System Settings and the menu bar. Apps that draw their own UI without accessibility info, like some games, show few or no labels. For those, grid mode lets you click anywhere on any screen.</p></details>
         <details><summary>Is it really free?</summary><p>Yes, every feature, with no time limit. Homebrew and source builds have no reminders at all. The ready-to-run download is free too, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license removes it and pays for further work.</p></details>

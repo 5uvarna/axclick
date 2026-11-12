@@ -15,8 +15,17 @@ cp app/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
 # (app/Nudge.swift). Homebrew and source builds leave it out.
 official=""
 if [ "${AXCLICK_OFFICIAL:-}" = 1 ]; then official="-D OFFICIAL"; fi
-swiftc -O $official app/*.swift -o "$app/Contents/MacOS/axclick"
-swiftc -O cli/main.swift -o build/axclick
+# Build for both Apple silicon and Intel, for macOS 13 and later (LSMinimumSystemVersion below).
+# Without -target, swiftc builds only for this Mac's chip and macOS version.
+universal() { # output, then the files to compile
+    local out=$1; shift
+    swiftc -O $official -target arm64-apple-macos13.0 "$@" -o "$out.arm64"
+    swiftc -O $official -target x86_64-apple-macos13.0 "$@" -o "$out.x86_64"
+    lipo -create "$out.arm64" "$out.x86_64" -output "$out"
+    rm "$out.arm64" "$out.x86_64"
+}
+universal "$app/Contents/MacOS/axclick" app/*.swift
+official="" universal build/axclick cli/main.swift
 
 cat > "$app/Contents/Info.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -28,7 +37,7 @@ cat > "$app/Contents/Info.plist" <<'EOF'
   <key>CFBundleExecutable</key><string>axclick</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.3.2</string>
+  <key>CFBundleShortVersionString</key><string>0.3.3</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
 </dict>

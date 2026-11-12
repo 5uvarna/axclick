@@ -1,0 +1,29 @@
+How to open axclick
+===================
+
+1. Drag axclick into your Applications folder.
+
+2. Open it. macOS says "axclick" Not Opened, because axclick isn't
+   notarized by Apple yet. Click Done (not Move to Bin).
+
+3. Open System Settings > Privacy & Security, scroll down to Security,
+   and click Open Anyway next to the message about axclick.
+
+4. Enter your Mac password and click Open.
+
+axclick then asks for Accessibility access. Turn it on, and press
+Command-Shift-Space in any app to see the labels.
+
+
+Skip all of this next time
+--------------------------
+
+Paste this into Terminal to install or update axclick without the
+warning. It downloads the latest version, checks its signature and
+opens it:
+
+    curl -fsSL https://5uvarna.github.io/axclick/install.sh | bash
+
+
+Website, help and source: https://5uvarna.github.io/axclick/
+License: https://ash19x.gumroad.com/l/qvpxln

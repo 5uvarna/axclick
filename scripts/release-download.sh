@@ -32,15 +32,25 @@ if codesign -dv "$app" 2>&1 | grep -q "Signature=adhoc"; then
     echo "error: the app was signed ad hoc, not with \"$identity\"" >&2
     exit 1
 fi
-if ! strings -a "$app/Contents/MacOS/axclick" | grep -q "api.gumroad.com"; then
+if [ "$(LC_ALL=C grep -a -c "api.gumroad.com" "$app/Contents/MacOS/axclick")" -lt 2 ]; then # once per architecture
     echo "error: this build has no license check (is gumroadProductID set in app/License.swift?)" >&2
     exit 1
 fi
 
+if ! lipo -info "$app/Contents/MacOS/axclick" | grep -q "x86_64 arm64\|arm64 x86_64"; then
+    echo "error: the app isn't universal (Apple silicon and Intel)" >&2
+    exit 1
+fi
+
+# The zip holds the app and a short "How to open axclick" note for the first launch.
 mkdir -p dist
-rm -f dist/axclick.zip
+rm -rf dist/axclick.zip dist/stage
+mkdir -p dist/stage
+ditto "$app" dist/stage/axclick.app
+cp "packaging/download/How to open axclick.txt" dist/stage/
 # ditto keeps the signature and permissions intact; zip can break them.
-ditto -c -k --keepParent "$app" dist/axclick.zip
+ditto -c -k --norsrc dist/stage dist/axclick.zip
+rm -rf dist/stage
 echo "wrote dist/axclick.zip ($(du -h dist/axclick.zip | cut -f1), axclick $version, signed with \"$identity\")"
 
 if [ "${1:-}" = --upload ]; then

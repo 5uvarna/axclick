@@ -88,7 +88,15 @@ Homebrew builds are signed ad hoc, so after each `brew upgrade axclick` turn axc
 
 ### Ready-to-run download
 
-[Download axclick.zip](https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip), unzip it and move axclick to your Applications folder. It's for people who'd rather not use developer tools. It's free, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license from [Gumroad](https://ash19x.gumroad.com/l/qvpxln) removes it: choose **Enter License…** from the menu bar icon and paste your key. Homebrew and source builds never show the reminder.
+The easiest way to install or update it is one command in Terminal:
+
+```bash
+curl -fsSL https://5uvarna.github.io/axclick/install.sh | bash
+```
+
+It downloads the latest release, checks it's signed with axclick's certificate, moves it to Applications and opens it, without macOS's "Not Opened" warning. [Read the script](docs/install.sh) first if you like.
+
+Or [download axclick.zip](https://github.com/5uvarna/axclick/releases/latest/download/axclick.zip), unzip it and move axclick to your Applications folder. It's for people who'd rather not use developer tools. It's free, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license from [Gumroad](https://ash19x.gumroad.com/l/qvpxln) removes it: choose **Enter License…** from the menu bar icon and paste your key. Homebrew and source builds never show the reminder.
 
 The download isn't notarized by Apple yet, so the first time you open it macOS blocks it. Try opening it once, then go to **System Settings → Privacy & Security** and click **Open Anyway** next to the message about axclick. You'll do this once for each download, including updates. Your Accessibility permission and license carry over.
 
