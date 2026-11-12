@@ -9,8 +9,10 @@ Bug reports, fixes and support for apps that don't label well are all welcome.
 ./build.sh install    # also installs the app to ~/Applications and restarts it
 ```
 
-Each build is signed ad hoc, so after a rebuild turn axclick off and on again in
-System Settings → Privacy & Security → Accessibility.
+Run `./scripts/setup-signing.sh` once so rebuilds keep their Accessibility
+permission. Without it, each build is signed ad hoc and you have to turn axclick
+off and on again in System Settings → Privacy & Security → Accessibility after
+every rebuild.
 
 ## Contributor license terms
 

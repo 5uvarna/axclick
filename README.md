@@ -86,6 +86,10 @@ If Homebrew asks you to trust the tap first, run `brew trust --formula 5uvarna/t
 
 Homebrew builds are signed ad hoc, so after each `brew upgrade axclick` turn axclick off and on again in Accessibility settings.
 
+### Ready-to-run download (coming soon)
+
+A signed, notarized download for people who'd rather not use developer tools. It's free, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license removes it. Homebrew and source builds never show the reminder.
+
 ### Build it yourself (free)
 
 Needs the Xcode Command Line Tools (`xcode-select --install`).

@@ -106,6 +106,7 @@ final class Controller: NSObject {
         guard !loading else { return }
         guard AXIsProcessTrusted(), ensureTap() else { welcome.show(); return }
         guard let app = NSWorkspace.shared.frontmostApplication else { return }
+        Nudge.recordUse()
         loading = true
         let pid = app.processIdentifier
         let pids = NSWorkspace.shared.runningApplications.map { $0.processIdentifier }
@@ -340,7 +341,10 @@ final class Controller: NSObject {
     func finishClick(_ target: Target, flags: CGEventFlags) {
         hide()
         // Let the overlay disappear before the click lands.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { self.click(target, flags: flags) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            self.click(target, flags: flags)
+            Nudge.showIfDue() // only in official builds, and only after the click has landed
+        }
     }
 
     func click(_ t: Target, flags: CGEventFlags) {
@@ -432,6 +436,7 @@ final class Controller: NSObject {
     @objc func showGrid() {
         if mode == .off {
             guard AXIsProcessTrusted(), ensureTap() else { welcome.show(); return }
+            Nudge.recordUse()
             openOverlay()
         }
         let mouse = NSEvent.mouseLocation
@@ -492,6 +497,7 @@ final class Controller: NSObject {
             } else {
                 postClick(at: p, flags: flags.contains(.maskCommand) ? .maskCommand : [])
             }
+            Nudge.showIfDue()
         }
     }
 

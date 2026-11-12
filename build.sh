@@ -11,7 +11,11 @@ rm -rf build
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 # The icon is drawn by app/Logo.swift; regenerate it with scripts/make-icon after changing the logo.
 cp app/AppIcon.icns "$app/Contents/Resources/AppIcon.icns"
-swiftc -O app/*.swift -o "$app/Contents/MacOS/axclick"
+# AXCLICK_OFFICIAL=1 is for official download builds only: it adds the license reminder
+# (app/Nudge.swift). Homebrew and source builds leave it out.
+official=""
+if [ "${AXCLICK_OFFICIAL:-}" = 1 ]; then official="-D OFFICIAL"; fi
+swiftc -O $official app/*.swift -o "$app/Contents/MacOS/axclick"
 swiftc -O cli/main.swift -o build/axclick
 
 cat > "$app/Contents/Info.plist" <<'EOF'
