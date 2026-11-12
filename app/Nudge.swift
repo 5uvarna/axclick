@@ -9,7 +9,6 @@ import AppKit
 enum Nudge {
     static let usesBetween = 100
     static let minimumInterval: TimeInterval = 7 * 24 * 60 * 60
-    static let buyURL = URL(string: "https://5uvarna.github.io/axclick/#get")!
 
     /// Counts one use: labels, scroll mode or grid mode opened.
     static func recordUse() {
@@ -22,7 +21,7 @@ enum Nudge {
     /// Shows the reminder if 100 uses have passed and it hasn't shown in the last week.
     static func showIfDue() {
         #if OFFICIAL
-        // TODO before the first official build: skip this when a valid license is installed.
+        guard !License.isActive else { return }
         let d = UserDefaults.standard
         guard d.integer(forKey: "nudgeUses") >= usesBetween else { return }
         if let last = d.object(forKey: "nudgeLastShown") as? Date, Date().timeIntervalSince(last) < minimumInterval { return }
@@ -55,16 +54,18 @@ final class NudgePanel: NSObject {
         let buy = NSButton(title: "Buy a license", target: self, action: #selector(buyLicense))
         buy.bezelStyle = .rounded
         buy.keyEquivalent = ""
+        let enter = NSButton(title: "Enter License", target: self, action: #selector(enterLicense))
+        enter.bezelStyle = .rounded
         let later = NSButton(title: "Not now", target: self, action: #selector(close))
         later.bezelStyle = .rounded
-        let buttons = NSStackView(views: [buy, later])
+        let buttons = NSStackView(views: [buy, enter, later])
         buttons.spacing = 8
         let text = textLabel("axclick is free to use. A $9.99 license removes this reminder and supports its development.")
         text.preferredMaxLayoutWidth = 300
         let stack = verticalStack([textLabel("Enjoying axclick?", bold: true), text, buttons], spacing: 10)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
-        let p = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 340, height: 130),
+        let p = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 380, height: 130),
                         styleMask: [.nonactivatingPanel, .titled, .closable, .fullSizeContentView],
                         backing: .buffered, defer: false)
         p.titleVisibility = .hidden
@@ -82,14 +83,19 @@ final class NudgePanel: NSObject {
             stack.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -18),
             stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 26),
             stack.bottomAnchor.constraint(equalTo: content.bottomAnchor, constant: -16),
-            content.widthAnchor.constraint(equalToConstant: 340),
+            content.widthAnchor.constraint(equalToConstant: 380),
         ])
         p.contentView = content
         panel = p
     }
 
     @objc func buyLicense() {
-        NSWorkspace.shared.open(Nudge.buyURL)
+        NSWorkspace.shared.open(License.buyURL)
+        close()
+    }
+
+    @objc func enterLicense() {
+        controller.license.show()
         close()
     }
 

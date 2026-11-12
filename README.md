@@ -88,7 +88,7 @@ Homebrew builds are signed ad hoc, so after each `brew upgrade axclick` turn axc
 
 ### Ready-to-run download (coming soon)
 
-A signed, notarized download for people who'd rather not use developer tools. It's free, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license removes it. Homebrew and source builds never show the reminder.
+A signed, notarized download for people who'd rather not use developer tools. It's free, with a small reminder after every 100 uses, at most once a week. It never interrupts a click and never steals focus. A $9.99 one-time license from Gumroad removes it. Homebrew and source builds never show the reminder.
 
 ### Build it yourself (free)
 
@@ -106,7 +106,7 @@ This builds the app, installs it to `~/Applications/axclick.app` and starts it. 
 
 On first launch, axclick opens a welcome window that explains why it needs Accessibility access and opens the right page in System Settings. Turn on **axclick** there and the window confirms when access is granted.
 
-axclick only reads the app in front, only while labels are showing, and makes no network connections.
+axclick only reads the app in front, only while labels are showing. Homebrew and source builds make no network connections. The ready-to-run download makes one: when you enter a license key, it checks the key with Gumroad once.
 
 ### Keep access across rebuilds (optional)
 

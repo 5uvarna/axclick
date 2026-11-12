@@ -37,6 +37,9 @@ final class Controller: NSObject {
     var hotKeyHandlerInstalled = false
     let settings = SettingsWindowController()
     let welcome = WelcomeWindowController()
+    #if OFFICIAL
+    let license = LicenseWindowController()
+    #endif
 
     func setup() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -47,6 +50,9 @@ final class Controller: NSObject {
         menu.addItem(withTitle: "Grid mode (Space while labels show)", action: #selector(showGrid), keyEquivalent: "").target = self
         menuItems.values.forEach { $0.target = self }
         menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
+        #if OFFICIAL
+        menu.addItem(withTitle: "Enter License…", action: #selector(openLicense), keyEquivalent: "").target = self
+        #endif
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit axclick", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.menu = menu
@@ -59,6 +65,9 @@ final class Controller: NSObject {
     }
 
     @objc func openSettings() { settings.show() }
+    #if OFFICIAL
+    @objc func openLicense() { license.show() }
+    #endif
 
     // MARK: Hotkeys
 
