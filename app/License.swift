@@ -12,7 +12,7 @@ enum License {
     /// license API) before the first official build.
     static let gumroadProductID = "NjQ_KnwCuIMv7sQB_bDEww=="
     /// The product page where people buy a license.
-    static let buyURL = URL(string: "https://5uvarna.github.io/axclick/#get")!
+    static let buyURL = URL(string: "https://ash19x.gumroad.com/l/qvpxln")!
     /// Each check counts one use on Gumroad, so this caps how many Macs one key unlocks.
     /// Gumroad can't tell machines apart, so a reinstall also counts; people over the limit
     /// can email for a reset.
