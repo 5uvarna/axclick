@@ -58,7 +58,19 @@ final class Controller: NSObject {
         item.menu = menu
         statusItem = item
         registerHotKeys()
+        // Chrome and other Chromium browsers take a moment to expose web pages, so ask them early:
+        // for browsers already running, and whenever one starts or comes to the front.
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didActivateApplicationNotification] {
+            center.addObserver(forName: name, object: nil, queue: nil) { note in
+                guard AXIsProcessTrusted(),
+                      let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+                prepareWebAccessibility(pid: app.processIdentifier)
+            }
+        }
         if !AXIsProcessTrusted() { welcome.show(); return }
+        NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular }
+            .forEach { prepareWebAccessibility(pid: $0.processIdentifier) }
         // Learn which apps have menu bar icons now, so the first labels don't wait for it.
         let pids = NSWorkspace.shared.runningApplications.map { $0.processIdentifier }
         DispatchQueue.global(qos: .utility).async { _ = collectMenuExtras(pids: pids) }

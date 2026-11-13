@@ -20,6 +20,64 @@ let realClickRoles: Set<String> = ["AXTextField", "AXTextArea", "AXSearchField",
 let collectBudget: TimeInterval = 1.5
 let maxNodes = 6000
 
+// MARK: - Web content in Chromium and Electron apps
+
+/// Chromium-based apps build the accessibility tree for web pages only when asked. Electron apps
+/// accept AXManualAccessibility. Chrome 157 and other Chromium browsers reject it, but turn web
+/// accessibility on with AXEnhancedUserInterface. That attribute can upset window animations in
+/// some apps, so it is only set on Chromium apps (bundles with a "<Name> Framework.framework")
+/// that refuse the first one.
+///
+/// Chrome takes about two seconds to build a page's tree after it's turned on, so the controller
+/// turns it on ahead of time (prepareWebAccessibility) when a browser starts or comes to the front.
+/// `wait`: if it had to be turned on just now, wait for the page before scanning.
+func enableWebAccessibility(_ app: AXUIElement, pid: pid_t, wait: Bool) {
+    let manual = AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+    guard manual == .attributeUnsupported, isChromium(pid) else { return }
+    var on: CFTypeRef?
+    if AXUIElementCopyAttributeValue(app, "AXEnhancedUserInterface" as CFString, &on) == .success,
+       (on as? Bool) == true { return }
+    AXUIElementSetAttributeValue(app, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+    if wait { waitForWebArea(app) }
+}
+
+/// Turns web accessibility on for an app in the background, so labels are ready when needed.
+func prepareWebAccessibility(pid: pid_t) {
+    DispatchQueue.global(qos: .utility).async {
+        let app = AXUIElementCreateApplication(pid)
+        AXUIElementSetMessagingTimeout(app, 0.3)
+        enableWebAccessibility(app, pid: pid, wait: false)
+    }
+}
+
+private var chromiumCache: [pid_t: Bool] = [:]
+private let chromiumLock = NSLock()
+
+private func isChromium(_ pid: pid_t) -> Bool {
+    chromiumLock.lock(); defer { chromiumLock.unlock() }
+    if let known = chromiumCache[pid] { return known }
+    let url = NSRunningApplication(processIdentifier: pid)?.bundleURL
+    let frameworks = url?.appendingPathComponent("Contents/Frameworks").path ?? ""
+    let names = (try? FileManager.default.contentsOfDirectory(atPath: frameworks)) ?? []
+    let result = names.contains { $0.hasSuffix(" Framework.framework") }
+    chromiumCache[pid] = result
+    return result
+}
+
+/// Waits up to 2.5 seconds for the focused window's web page to have content.
+private func waitForWebArea(_ app: AXUIElement) {
+    func ready(_ el: AXUIElement, _ depth: Int) -> Bool {
+        let (role, _, children) = info(el)
+        if role == "AXWebArea" { return !children.isEmpty }
+        return depth < 25 && children.contains { ready($0, depth + 1) }
+    }
+    let deadline = Date().addingTimeInterval(2.5)
+    while Date() < deadline {
+        if let window: AXUIElement = attr(app, kAXFocusedWindowAttribute), ready(window, 0) { return }
+        Thread.sleep(forTimeInterval: 0.1)
+    }
+}
+
 // MARK: - Accessibility
 
 struct Target {
@@ -78,8 +136,7 @@ func hasPress(_ el: AXUIElement) -> Bool {
 func collectTargets(pid: pid_t) -> [Target] {
     let app = AXUIElementCreateApplication(pid)
     AXUIElementSetMessagingTimeout(app, 0.3)
-    // Chromium and Electron apps only build their accessibility tree when asked to.
-    AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+    enableWebAccessibility(app, pid: pid, wait: true)
 
     var out: [Target] = []
     var nodes = 0
@@ -225,7 +282,7 @@ struct ScrollArea {
 func collectScrollAreas(pid: pid_t) -> [ScrollArea] {
     let app = AXUIElementCreateApplication(pid)
     AXUIElementSetMessagingTimeout(app, 0.3)
-    AXUIElementSetAttributeValue(app, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+    enableWebAccessibility(app, pid: pid, wait: true)
     guard let window: AXUIElement = attr(app, kAXFocusedWindowAttribute),
           let windowFrame = info(window).frame else { return [] }
 

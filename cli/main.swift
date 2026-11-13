@@ -170,9 +170,15 @@ guard let app = runningApp(appName) else { fail("app not running: \(appName)") }
 let axApp = AXUIElementCreateApplication(app.processIdentifier)
 // Default is 6s per call; a busy app would otherwise stall the whole walk.
 AXUIElementSetMessagingTimeout(axApp, 0.5)
-// Chromium and Electron apps only build their accessibility tree when asked to.
-AXUIElementSetAttributeValue(axApp, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+// Chromium and Electron apps only build their accessibility tree when asked to. Electron accepts
+// AXManualAccessibility; Chrome 157 and later need AXEnhancedUserInterface, and take about two
+// seconds to expose the page after it's first turned on.
+let manualAX = AXUIElementSetAttributeValue(axApp, "AXManualAccessibility" as CFString, kCFBooleanTrue)
+var enhancedAX: CFTypeRef?
+let wasEnhanced = AXUIElementCopyAttributeValue(axApp, "AXEnhancedUserInterface" as CFString, &enhancedAX) == .success
+    && (enhancedAX as? Bool) == true
 AXUIElementSetAttributeValue(axApp, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+if manualAX == .attributeUnsupported && !wasEnhanced { Thread.sleep(forTimeInterval: 2.5) }
 
 let elements = collect(app: axApp)
 
