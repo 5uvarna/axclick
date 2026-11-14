@@ -133,7 +133,11 @@ func hasPress(_ el: AXUIElement) -> Bool {
     return ((names as? [String]) ?? []).contains(kAXPressAction)
 }
 
-func collectTargets(pid: pid_t) -> [Target] {
+/// `emptyWindow` is the focused window's frame when nothing inside it could be labeled. Some
+/// apps draw everything themselves and don't expose it to Accessibility (Telegram's Mac app
+/// reports over 100 items in its window but fails to return any of them), so click mode
+/// offers the grid over that window instead of labeling only the menu bar.
+func collectTargets(pid: pid_t) -> (targets: [Target], emptyWindow: CGRect?) {
     let app = AXUIElementCreateApplication(pid)
     AXUIElementSetMessagingTimeout(app, 0.3)
     enableWebAccessibility(app, pid: pid, wait: true)
@@ -180,10 +184,12 @@ func collectTargets(pid: pid_t) -> [Target] {
         if let focused = focused, CFEqual(w, focused) { continue }
         if (attr(w, kAXSubroleAttribute) as String?) != kAXStandardWindowSubrole { windows.append(w) }
     }
+    let beforeWindows = out.count
     for w in windows {
         walk(w, depth: 0, clip: info(w).frame)
     }
-    return out
+    let empty = out.count == beforeWindows ? focused.flatMap { info($0).frame } : nil
+    return (out, empty)
 }
 
 /// Menu bar icons (Wi-Fi, Bluetooth, sound, Control Center and third-party apps' status items).

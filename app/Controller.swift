@@ -137,8 +137,12 @@ final class Controller: NSObject {
                 var extras: [Target] = []
                 let group = DispatchGroup()
                 DispatchQueue.global(qos: .userInteractive).async(group: group) { extras = collectMenuExtras(pids: pids) }
-                var targets = collectTargets(pid: pid)
+                var (targets, emptyWindow) = collectTargets(pid: pid)
                 group.wait()
+                if let frame = emptyWindow, frame.width >= 100, frame.height >= 100 {
+                    DispatchQueue.main.async { self.loading = false; self.startGrid(in: frame) }
+                    return
+                }
                 for e in extras where !targets.contains(where: {
                     abs($0.frame.midX - e.frame.midX) < 6 && abs($0.frame.midY - e.frame.midY) < 6 }) {
                     targets.append(e)
@@ -454,15 +458,25 @@ final class Controller: NSObject {
     // MARK: Grid
 
     /// Starts on the screen with the pointer. Number keys switch screens.
-    @objc func showGrid() {
+    @objc func showGrid() { startGrid(in: nil) }
+
+    /// `window`: start on just that window (top-left coordinates), for apps whose window has
+    /// nothing to label. Delete doesn't go back past it; number keys still switch screens.
+    func startGrid(in window: CGRect?) {
         if mode == .off {
             guard AXIsProcessTrusted(), ensureTap() else { welcome.show(); return }
-            Nudge.recordUse()
+            if window == nil { Nudge.recordUse() } // click mode already counted this use
             openOverlay()
         }
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.screens.first
         regions = screen.map { [topLeft($0.frame)] } ?? []
+        if let w = window {
+            // Keep only the part of the window on the screen that shows most of it.
+            let visible = NSScreen.screens.map { topLeft($0.frame).intersection(w) }
+                .max { $0.width * $0.height < $1.width * $1.height }
+            if let v = visible, v.width >= 100, v.height >= 100 { regions = [v] }
+        }
         typed = ""
         mode = .grid
         render()
